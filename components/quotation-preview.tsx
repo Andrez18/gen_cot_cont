@@ -27,7 +27,7 @@ export function QuotationPreview({ quotation }: QuotationPreviewProps) {
       </div>
 
       {/* Title & Client */}
-      <div style={{ marginBottom: '24px' }}>
+      <div style={{ marginBottom: '24px', textAlign: 'center' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>
           Cotizacion #{quotation.number}
         </h1>
@@ -95,7 +95,7 @@ export function QuotationPreview({ quotation }: QuotationPreviewProps) {
       )}
 
       {/* Signature */}
-      <div style={{ marginTop: '48px', paddingTop: '16px' }}>
+      <div style={{ marginTop: '48px', paddingTop: '16px', textAlign:'center', display: 'flex', justifyContent:'center' }}>
         <div style={{ width: '192px' }}>
           <div style={{ borderTop: '1px solid #111827', paddingTop: '8px' }}>
             <p style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{quotation.provider.name}</p>
