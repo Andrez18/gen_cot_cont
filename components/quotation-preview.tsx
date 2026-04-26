@@ -95,13 +95,44 @@ export function QuotationPreview({ quotation }: QuotationPreviewProps) {
       )}
 
       {/* Signature */}
-      <div style={{ marginTop: '48px', paddingTop: '16px', textAlign:'center', display: 'flex', justifyContent:'center' }}>
-        <div style={{ width: '192px' }}>
-          <div style={{ borderTop: '1px solid #111827', paddingTop: '8px' }}>
-            <p style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{quotation.provider.name}</p>
-            <p>{quotation.provider.documentNumber}</p>
-            <p>Cel: {quotation.provider.phone}</p>
+     <div style={{ marginTop: '64px', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ width: '224px', textAlign: 'center' }}>
+
+          {/* Contenedor relativo para superponer firma y línea */}
+          <div style={{ position: 'relative', height: '60px', marginBottom: '8px' }}>
+            <img
+              src="/firma.png"
+              alt="Firma"
+              style={{
+                position: 'absolute',
+                bottom: 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                height: '80px',
+                width: 'auto',
+                objectFit: 'contain',
+                zIndex: 0
+              }}
+            />
+
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              borderTop: '1px solid #111827',
+              zIndex: 1
+            }} />
+
           </div>
+
+          {/* Datos */}
+          <p style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
+            {quotation.provider.name}
+          </p>
+          <p>{quotation.provider.documentNumber}</p>
+          <p>Cel: {quotation.provider.phone}</p>
+
         </div>
       </div>
     </div>
