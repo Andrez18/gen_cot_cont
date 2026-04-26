@@ -22,10 +22,10 @@ export const metadata: Metadata = {
   authors: [{ name: 'Jorge Vallejo' }],
   icons: {
     icon: [
-      { url: '/icon-192x192.png', sizes: '192x192', type: 'image/jpeg' },
-      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/jpeg' },
+      { url: '/icon-192x192.jpg', sizes: '192x192', type: 'image/jpeg' },
+      { url: '/icon-512x512.jpg', sizes: '512x512', type: 'image/jpeg' },
     ],
-    apple: '/icon-512x512.png',
+    apple: '/apple-icon.jpg',
   },
   appleWebApp: {
     capable: true,
