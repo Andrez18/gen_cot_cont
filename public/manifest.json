@@ -1,0 +1,28 @@
+{
+  "name": "CotiFactura - Cotizaciones y Cuentas de Cobro",
+  "short_name": "CotiFactura",
+  "description": "Genera cotizaciones y cuentas de cobro profesionales",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f7fa",
+  "theme_color": "#3b5998",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192x192.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"],
+  "lang": "es-CO",
+  "scope": "/",
+  "prefer_related_applications": false
+}
