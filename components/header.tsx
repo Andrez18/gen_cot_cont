@@ -40,6 +40,9 @@ export function Header({ onSettingsClick }: HeaderProps) {
           <Button variant="ghost" asChild>
             <Link href="/history">Historial</Link>
           </Button>
+          <Button variant="ghost" asChild>
+            <Link href="/expenses/new">Gastos</Link>
+          </Button>
           {onSettingsClick && (
             <Button variant="ghost" size="icon" onClick={onSettingsClick}>
               <Settings className="h-5 w-5" />
@@ -66,6 +69,9 @@ export function Header({ onSettingsClick }: HeaderProps) {
               </Button>
               <Button variant="ghost" className="justify-start" asChild>
                 <Link href="/history">Historial</Link>
+              </Button>
+              <Button variant="ghost" className="justify-start" asChild>
+                <Link href="/expenses/new">Gastos</Link>
               </Button>
               {onSettingsClick && (
                 <Button variant="ghost" className="justify-start" onClick={onSettingsClick}>
