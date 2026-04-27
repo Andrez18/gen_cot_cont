@@ -307,7 +307,7 @@ export function ExpenseForm() {
                 onChange={(e) => setDesc(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && agregar()}
                 placeholder="Descripción"
-                style={{ ...inputStyle, flex: 1, minWidth: '140px', borderColor: errDesc ? '#ef4444' : '#d1d5db' }}
+                style={{ ...inputStyle, flex: 1, minWidth: '130px', borderColor: errDesc ? '#ef4444' : '#d1d5db' }}
               />
               <input
                 type="number"
@@ -316,13 +316,13 @@ export function ExpenseForm() {
                 onKeyDown={(e) => e.key === 'Enter' && agregar()}
                 placeholder="Monto"
                 min={0}
-                style={{ ...inputStyle, width: '130px', borderColor: errMonto ? '#ef4444' : '#d1d5db' }}
+                style={{ ...inputStyle, width: '150px', borderColor: errMonto ? '#ef4444' : '#d1d5db' }}
               />
               <select value={cat} onChange={(e) => setCat(e.target.value)} style={{ ...selectStyle, width: '140px' }}>
                 <option value="">Categoría</option>
                 {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
-              <select value={tipo} onChange={(e) => setTipo(e.target.value as TipoRegistro)} style={{ ...selectStyle, width: '110px' }}>
+              <select value={tipo} onChange={(e) => setTipo(e.target.value as TipoRegistro)} style={{ ...selectStyle, width: '140px' }}>
                 <option value="gasto">Gasto</option>
                 <option value="ingreso">Ingreso</option>
               </select>
@@ -345,28 +345,52 @@ export function ExpenseForm() {
                 Aún no hay registros. Agregá gastos o ingresos arriba.
               </div>
             ) : (
-              registros.map((r) => (
-                <div
-                  key={r.id}
-                  style={{ display: 'flex', alignItems: 'center', padding: '9px 12px', borderBottom: '1px solid #f3f4f6', fontSize: '13px', gap: '8px' }}
-                >
-                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0, background: r.tipo === 'ingreso' ? '#10b981' : '#ef4444', display: 'inline-block' }} />
-                  <span style={{ flex: 1, color: '#111827' }}>{r.desc}</span>
-                  <span style={{ color: '#9ca3af', fontSize: '12px', minWidth: '90px' }}>{r.cat || '—'}</span>
-                  <span style={{ fontSize: '11px', color: '#9ca3af', minWidth: '70px', textAlign: 'right' }}>{r.fecha}</span>
-                  <span style={{ fontWeight: 600, minWidth: '110px', textAlign: 'right', color: r.tipo === 'ingreso' ? '#065f46' : '#991b1b' }}>
-                    {r.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(r.monto)}
+            registros.map((r) => (
+              <div
+                key={r.id}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  padding: '10px 12px',
+                  borderBottom: '1px solid #f3f4f6',
+                  fontSize: '13px',
+                  gap: '4px',
+                }}
+              >
+                {/* Fila superior: punto + descripción + botón eliminar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{
+                    width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
+                    background: r.tipo === 'ingreso' ? '#10b981' : '#ef4444',
+                    display: 'inline-block'
+                  }} />
+                  <span style={{ flex: 1, color: '#111827', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {r.desc}
                   </span>
                   <button
                     onClick={() => eliminar(r.id)}
-                    style={{ background: 'none', border: 'none', color: '#d1d5db', cursor: 'pointer', fontSize: '16px', padding: '0 2px', lineHeight: 1, fontFamily: 'Arial' }}
+                    style={{ background: 'none', border: 'none', color: '#d1d5db', cursor: 'pointer', fontSize: '16px', padding: '0 2px', lineHeight: 1, fontFamily: 'Arial', flexShrink: 0 }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
                     onMouseLeave={(e) => (e.currentTarget.style.color = '#d1d5db')}
                   >
                     ×
                   </button>
                 </div>
-              ))
+
+                {/* Fila inferior: categoría + fecha + monto */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '15px' }}>
+                  <span style={{ color: '#9ca3af', fontSize: '12px', flex: 1 }}>
+                    {r.cat || '—'}
+                  </span>
+                  <span style={{ fontSize: '11px', color: '#9ca3af' }}>
+                    {r.fecha}
+                  </span>
+                  <span style={{ fontWeight: 600, color: r.tipo === 'ingreso' ? '#065f46' : '#991b1b', fontSize: '13px', flexShrink: 0 }}>
+                    {r.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(r.monto)}
+                  </span>
+                </div>
+              </div>
+            ))
             )}
           </div>
 
