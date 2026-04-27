@@ -279,17 +279,17 @@ export function ExpenseForm() {
       ) : (
         <>
           {/* Tarjetas resumen */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '28px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '10px', marginBottom: '28px' }}>
             {[
               { label: 'Ingresos', value: ingresos, color: '#065f46' },
               { label: 'Gastos', value: gastos, color: '#991b1b' },
               { label: 'Balance', value: balance, color: balance >= 0 ? '#065f46' : '#991b1b' },
             ].map((c) => (
-              <div key={c.label} style={{ background: '#f9fafb', borderRadius: '8px', padding: '14px 16px' }}>
-                <div style={{ fontSize: '12px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>
+              <div key={c.label} style={{ background: '#f9fafb', borderRadius: '8px', padding: '12px' }}>
+                <div style={{ fontSize: '11px', color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px', whiteSpace: 'nowrap' }}>
                   {c.label}
                 </div>
-                <div style={{ fontSize: '22px', fontWeight: 'bold', color: c.color }}>
+                <div style={{ fontSize: 'clamp(16px, 4vw, 22px)', fontWeight: 'bold', color: c.color, wordBreak: 'break-word' }}>
                   {formatCurrency(c.value)}
                 </div>
               </div>
