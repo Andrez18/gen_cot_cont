@@ -97,6 +97,7 @@ export function useExpenseRecords() {
     supabase
       .from('expense_records')
       .select('*')
+      .is('report_id', null)          
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         if (data) setRecords(data)
@@ -136,10 +137,10 @@ export function useExpenseRecords() {
     return { error }
   }, [])
 
-  const clearRecords = useCallback(async (ids: string[]) => {
+  const clearRecords = useCallback(async (ids: string[], reportId: string) => {
     const { error } = await supabase
       .from('expense_records')
-      .delete()
+      .update({ report_id: reportId })  
       .in('id', ids)
 
     if (!error) {
@@ -153,13 +154,13 @@ export function useExpenseRecords() {
 
 // ── Informes ──────────────────────────────────────────────
 export function useExpenseReports() {
-  const [reports, setReports] = useState<any[]>([])  // ← estado faltante agregado
+  const [reports, setReports] = useState<any[]>([])  
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
     supabase
       .from('expense_reports')
-      .select('*')
+      .select('*, expense_records(*)')  
       .order('created_at', { ascending: false })
       .then(({ data }) => {
         if (data) setReports(data)

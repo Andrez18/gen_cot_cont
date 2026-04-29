@@ -257,6 +257,7 @@ function GastosTab({ onVerFoto }: { onVerFoto: (url: string) => void }) {
             <InformeCard
               key={inf.id ?? i}
               informe={inf}
+              registros={inf.expense_records ?? []} 
               index={informes.length - i}
               onVerFoto={onVerFoto}
             />

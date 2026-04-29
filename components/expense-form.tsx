@@ -78,10 +78,21 @@ export function ExpenseForm() {
         return acc
       }, {})
 
-    const informe = { fecha: hoy(), ingresos, gastos, balance, gastos_por_cat: gastosPorCat, total_registros: registros.length }
+    const informe = {
+      fecha: hoy(),
+      ingresos,
+      gastos,
+      balance,
+      gastos_por_cat: gastosPorCat,
+      total_registros: registros.length,
+    }
+
     const { data } = await saveReport(informe)
     setInformeActual(data)
-    await clearRecords(registros.map(r => r.id))
+
+    if (data?.id) {
+      await clearRecords(registros.map(r => r.id), data.id)  
+    }
   }, [registros, ingresos, gastos, balance, saveReport, clearRecords])
 
   if (!isLoaded) {
