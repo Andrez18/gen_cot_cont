@@ -38,10 +38,10 @@ export function Header({ onSettingsClick }: HeaderProps) {
             <Link href="/invoice/new">Nueva Cuenta</Link>
           </Button>
           <Button variant="ghost" asChild>
-            <Link href="/history">Historial</Link>
+            <Link href="/expenses/new">Gastos</Link>
           </Button>
           <Button variant="ghost" asChild>
-            <Link href="/expenses/new">Gastos</Link>
+            <Link href="/history">Historial</Link>
           </Button>
           {onSettingsClick && (
             <Button variant="ghost" size="icon" onClick={onSettingsClick}>
@@ -68,10 +68,10 @@ export function Header({ onSettingsClick }: HeaderProps) {
                 <Link href="/invoice/new">Nueva Cuenta de Cobro</Link>
               </Button>
               <Button variant="ghost" className="justify-start" asChild>
-                <Link href="/history">Historial</Link>
+                <Link href="/expenses/new">Gastos</Link>
               </Button>
               <Button variant="ghost" className="justify-start" asChild>
-                <Link href="/expenses/new">Gastos</Link>
+                <Link href="/history">Historial</Link>
               </Button>
               {onSettingsClick && (
                 <Button variant="ghost" className="justify-start" onClick={onSettingsClick}>

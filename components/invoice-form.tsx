@@ -26,14 +26,20 @@ import {
 import { InvoicePreview } from './invoice-preview'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 import { useLocalStorage } from '@/hooks/use-local-storage'
+import { useInvoices } from '@/hooks/use-supabase-storage'  // ← NUEVO
 
 export function InvoiceForm() {
-  const { value: savedInvoices, setValue: setSavedInvoices } = useLocalStorage<Invoice[]>('invoices', [])
+  // ── Supabase ──────────────────────────────────────────
+  const { saveInvoice } = useInvoices()  // ← NUEVO
+
+  // ── localStorage solo para proveedor y banco (autocompletado) ──
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
   const { value: savedBank, setValue: setSavedBank } = useLocalStorage<BankInfo>('bank', DEFAULT_BANK_INFO)
+
   const { generatePdf, isGenerating } = usePdfGenerator()
 
   const [showPreview, setShowPreview] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)  // ← NUEVO
   const [documentNumber, setDocumentNumber] = useState('')
   const [date, setDate] = useState('')
   const [city, setCity] = useState('Medellín')
@@ -48,13 +54,8 @@ export function InvoiceForm() {
     setDate(new Date().toISOString().split('T')[0])
   }, [])
 
-  useEffect(() => {
-    setProvider(savedProvider)
-  }, [savedProvider])
-
-  useEffect(() => {
-    setBankInfo(savedBank)
-  }, [savedBank])
+  useEffect(() => { setProvider(savedProvider) }, [savedProvider])
+  useEffect(() => { setBankInfo(savedBank) }, [savedBank])
 
   const invoice: Invoice = {
     id: generateId(),
@@ -70,9 +71,15 @@ export function InvoiceForm() {
     createdAt: new Date().toISOString(),
   }
 
-  const handleSave = () => {
-    const newInvoice = { ...invoice, id: generateId() }
-    setSavedInvoices([newInvoice, ...savedInvoices])
+  // ── REEMPLAZADO: ahora guarda en Supabase ──────────────
+  const handleSave = async () => {
+    setIsSaving(true)
+    const { error } = await saveInvoice(invoice)
+    setIsSaving(false)
+    if (error) {
+      alert('Error al guardar: ' + error.message)
+      return
+    }
     setSavedProvider(provider)
     setSavedBank(bankInfo)
     alert('Cuenta de cobro guardada exitosamente')
@@ -93,9 +100,9 @@ export function InvoiceForm() {
           <Button variant="outline" onClick={() => setShowPreview(false)}>
             Volver a Editar
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={isSaving}>
             <Save className="h-4 w-4 mr-2" />
-            Guardar
+            {isSaving ? 'Guardando...' : 'Guardar'}
           </Button>
           <Button onClick={handleDownloadPdf} disabled={isGenerating}>
             <FileDown className="h-4 w-4 mr-2" />
@@ -117,35 +124,20 @@ export function InvoiceForm() {
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="number">Número de Cuenta</Label>
-            <Input
-              id="number"
-              value={documentNumber}
-              onChange={(e) => setDocumentNumber(e.target.value)}
-              placeholder="1012"
-            />
+            <Input id="number" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} placeholder="1012" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="date">Fecha</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+            <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="city">Ciudad</Label>
-            <Input
-              id="city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="Medellín"
-            />
+            <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Medellín" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Client Info (DEBE A) */}
+      {/* Client Info */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Cliente (Debe a)</CardTitle>
@@ -153,21 +145,11 @@ export function InvoiceForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="companyName">Razón Social</Label>
-            <Input
-              id="companyName"
-              value={client.companyName}
-              onChange={(e) => setClient({ ...client, companyName: e.target.value })}
-              placeholder="EDS ANTIOQUEÑA DE COMBUSTIBLES"
-            />
+            <Input id="companyName" value={client.companyName} onChange={(e) => setClient({ ...client, companyName: e.target.value })} placeholder="EDS ANTIOQUEÑA DE COMBUSTIBLES" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="nit">NIT</Label>
-            <Input
-              id="nit"
-              value={client.nit}
-              onChange={(e) => setClient({ ...client, nit: e.target.value })}
-              placeholder="900.207.854-8"
-            />
+            <Input id="nit" value={client.nit} onChange={(e) => setClient({ ...client, nit: e.target.value })} placeholder="900.207.854-8" />
           </div>
         </CardContent>
       </Card>
@@ -180,30 +162,15 @@ export function InvoiceForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="providerName">Nombre Completo</Label>
-            <Input
-              id="providerName"
-              value={provider.name}
-              onChange={(e) => setProvider({ ...provider, name: e.target.value })}
-              placeholder="Jorge Vallejo"
-            />
+            <Input id="providerName" value={provider.name} onChange={(e) => setProvider({ ...provider, name: e.target.value })} placeholder="Jorge Vallejo" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="docNumber">Cédula de Ciudadanía</Label>
-            <Input
-              id="docNumber"
-              value={provider.documentNumber}
-              onChange={(e) => setProvider({ ...provider, documentNumber: e.target.value })}
-              placeholder="18.506.917"
-            />
+            <Input id="docNumber" value={provider.documentNumber} onChange={(e) => setProvider({ ...provider, documentNumber: e.target.value })} placeholder="18.506.917" />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="phone">Teléfono</Label>
-            <Input
-              id="phone"
-              value={provider.phone}
-              onChange={(e) => setProvider({ ...provider, phone: e.target.value })}
-              placeholder="311-344-00-70"
-            />
+            <Input id="phone" value={provider.phone} onChange={(e) => setProvider({ ...provider, phone: e.target.value })} placeholder="311-344-00-70" />
           </div>
         </CardContent>
       </Card>
@@ -216,29 +183,14 @@ export function InvoiceForm() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="amount">Valor a Cobrar (COP)</Label>
-            <Input
-              id="amount"
-              type="number"
-              value={amount || ''}
-              onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
-              placeholder="1650000"
-              className="text-lg"
-            />
+            <Input id="amount" type="number" value={amount || ''} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} placeholder="1650000" className="text-lg" />
             {amount > 0 && (
-              <p className="text-sm text-muted-foreground italic">
-                {numberToWords(amount)}
-              </p>
+              <p className="text-sm text-muted-foreground italic">{numberToWords(amount)}</p>
             )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="concept">Por Concepto de</Label>
-            <Textarea
-              id="concept"
-              value={concept}
-              onChange={(e) => setConcept(e.target.value)}
-              placeholder="Obras civiles (pintura base aceite negra y gris basalto)"
-              rows={3}
-            />
+            <Textarea id="concept" value={concept} onChange={(e) => setConcept(e.target.value)} placeholder="Obras civiles (pintura base aceite negra y gris basalto)" rows={3} />
           </div>
         </CardContent>
       </Card>
@@ -251,22 +203,12 @@ export function InvoiceForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="bankEntity">Entidad Bancaria</Label>
-            <Input
-              id="bankEntity"
-              value={bankInfo.entity}
-              onChange={(e) => setBankInfo({ ...bankInfo, entity: e.target.value })}
-              placeholder="Bancolombia"
-            />
+            <Input id="bankEntity" value={bankInfo.entity} onChange={(e) => setBankInfo({ ...bankInfo, entity: e.target.value })} placeholder="Bancolombia" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="accountType">Tipo de Cuenta</Label>
-            <Select
-              value={bankInfo.accountType}
-              onValueChange={(value) => setBankInfo({ ...bankInfo, accountType: value })}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={bankInfo.accountType} onValueChange={(value) => setBankInfo({ ...bankInfo, accountType: value })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Ahorros">Ahorros</SelectItem>
                 <SelectItem value="Corriente">Corriente</SelectItem>
@@ -275,21 +217,11 @@ export function InvoiceForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="accountNumber">Número de Cuenta</Label>
-            <Input
-              id="accountNumber"
-              value={bankInfo.accountNumber}
-              onChange={(e) => setBankInfo({ ...bankInfo, accountNumber: e.target.value })}
-              placeholder="91209711252"
-            />
+            <Input id="accountNumber" value={bankInfo.accountNumber} onChange={(e) => setBankInfo({ ...bankInfo, accountNumber: e.target.value })} placeholder="91209711252" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="accountHolder">A Nombre de</Label>
-            <Input
-              id="accountHolder"
-              value={bankInfo.accountHolder}
-              onChange={(e) => setBankInfo({ ...bankInfo, accountHolder: e.target.value })}
-              placeholder="María Nathali Gómez Jiménez"
-            />
+            <Input id="accountHolder" value={bankInfo.accountHolder} onChange={(e) => setBankInfo({ ...bankInfo, accountHolder: e.target.value })} placeholder="María Nathali Gómez Jiménez" />
           </div>
         </CardContent>
       </Card>
@@ -300,9 +232,9 @@ export function InvoiceForm() {
           <Eye className="h-4 w-4 mr-2" />
           Vista Previa
         </Button>
-        <Button variant="outline" onClick={handleSave} className="flex-1 sm:flex-none">
+        <Button variant="outline" onClick={handleSave} disabled={isSaving} className="flex-1 sm:flex-none">
           <Save className="h-4 w-4 mr-2" />
-          Guardar
+          {isSaving ? 'Guardando...' : 'Guardar'}
         </Button>
       </div>
     </div>

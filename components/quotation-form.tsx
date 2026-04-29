@@ -27,16 +27,22 @@ import {
 import { QuotationPreview } from './quotation-preview'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 import { useLocalStorage } from '@/hooks/use-local-storage'
+import { useQuotations } from '@/hooks/use-supabase-storage'  // ← NUEVO
 
 const UNITS = ['ml', 'm²', 'm³', 'und', 'global', 'viaje', 'día', 'hora', 'kg', 'lt']
 
 export function QuotationForm() {
-  const { value: savedQuotations, setValue: setSavedQuotations } = useLocalStorage<Quotation[]>('quotations', [])
+  // ── Supabase ──────────────────────────────────────────
+  const { saveQuotation } = useQuotations()  // ← NUEVO
+
+  // ── localStorage solo para proveedor y banco (autocompletado) ──
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
   const { value: savedBank, setValue: setSavedBank } = useLocalStorage<BankInfo>('bank', DEFAULT_BANK_INFO)
+
   const { generatePdf, isGenerating } = usePdfGenerator()
 
   const [showPreview, setShowPreview] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)  // ← NUEVO
   const [documentNumber, setDocumentNumber] = useState('')
   const [date, setDate] = useState('')
   const [city, setCity] = useState('Medellín, Antioquia')
@@ -54,18 +60,12 @@ export function QuotationForm() {
     setDate(new Date().toISOString().split('T')[0])
   }, [])
 
-  useEffect(() => {
-    setProvider(savedProvider)
-  }, [savedProvider])
-
-  useEffect(() => {
-    setBankInfo(savedBank)
-  }, [savedBank])
+  useEffect(() => { setProvider(savedProvider) }, [savedProvider])
+  useEffect(() => { setBankInfo(savedBank) }, [savedBank])
 
   const updateItem = (id: string, field: keyof LineItem, value: string | number) => {
     setItems(prev => prev.map(item => {
       if (item.id !== id) return item
-      
       const updated = { ...item, [field]: value }
       if (field === 'quantity' || field === 'unitPrice') {
         updated.total = Number(updated.quantity) * Number(updated.unitPrice)
@@ -75,14 +75,7 @@ export function QuotationForm() {
   }
 
   const addItem = () => {
-    setItems(prev => [...prev, {
-      id: generateId(),
-      description: '',
-      quantity: 0,
-      unit: 'ml',
-      unitPrice: 0,
-      total: 0
-    }])
+    setItems(prev => [...prev, { id: generateId(), description: '', quantity: 0, unit: 'ml', unitPrice: 0, total: 0 }])
   }
 
   const removeItem = (id: string) => {
@@ -107,9 +100,15 @@ export function QuotationForm() {
     createdAt: new Date().toISOString(),
   }
 
-  const handleSave = () => {
-    const newQuotation = { ...quotation, id: generateId() }
-    setSavedQuotations([newQuotation, ...savedQuotations])
+  // ── REEMPLAZADO: ahora guarda en Supabase ──────────────
+  const handleSave = async () => {
+    setIsSaving(true)
+    const { error } = await saveQuotation(quotation)
+    setIsSaving(false)
+    if (error) {
+      alert('Error al guardar: ' + error.message)
+      return
+    }
     setSavedProvider(provider)
     setSavedBank(bankInfo)
     alert('Cotización guardada exitosamente')
@@ -130,9 +129,9 @@ export function QuotationForm() {
           <Button variant="outline" onClick={() => setShowPreview(false)}>
             Volver a Editar
           </Button>
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={isSaving}>
             <Save className="h-4 w-4 mr-2" />
-            Guardar
+            {isSaving ? 'Guardando...' : 'Guardar'}
           </Button>
           <Button onClick={handleDownloadPdf} disabled={isGenerating}>
             <FileDown className="h-4 w-4 mr-2" />
@@ -154,30 +153,15 @@ export function QuotationForm() {
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="number">Número de Cotización</Label>
-            <Input
-              id="number"
-              value={documentNumber}
-              onChange={(e) => setDocumentNumber(e.target.value)}
-              placeholder="1020"
-            />
+            <Input id="number" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} placeholder="1020" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="date">Fecha</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-            />
+            <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="space-y-2">
             <Label htmlFor="city">Ciudad</Label>
-            <Input
-              id="city"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              placeholder="Medellín, Antioquia"
-            />
+            <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Medellín, Antioquia" />
           </div>
         </CardContent>
       </Card>
@@ -190,30 +174,15 @@ export function QuotationForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="companyName">Razón Social</Label>
-            <Input
-              id="companyName"
-              value={client.companyName}
-              onChange={(e) => setClient({ ...client, companyName: e.target.value })}
-              placeholder="ANTIOQUEÑA COMBUSTIBLES S.A.S"
-            />
+            <Input id="companyName" value={client.companyName} onChange={(e) => setClient({ ...client, companyName: e.target.value })} placeholder="ANTIOQUEÑA COMBUSTIBLES S.A.S" />
           </div>
           <div className="space-y-2">
             <Label htmlFor="nit">NIT</Label>
-            <Input
-              id="nit"
-              value={client.nit}
-              onChange={(e) => setClient({ ...client, nit: e.target.value })}
-              placeholder="900.207.854-8"
-            />
+            <Input id="nit" value={client.nit} onChange={(e) => setClient({ ...client, nit: e.target.value })} placeholder="900.207.854-8" />
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="location">Ubicación / Sede</Label>
-            <Input
-              id="location"
-              value={client.location}
-              onChange={(e) => setClient({ ...client, location: e.target.value })}
-              placeholder="EDS Manglar"
-            />
+            <Input id="location" value={client.location} onChange={(e) => setClient({ ...client, location: e.target.value })} placeholder="EDS Manglar" />
           </div>
         </CardContent>
       </Card>
@@ -223,8 +192,7 @@ export function QuotationForm() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Detalle de la Cotización</CardTitle>
           <Button size="sm" onClick={addItem}>
-            <Plus className="h-4 w-4 mr-1" />
-            Agregar
+            <Plus className="h-4 w-4 mr-1" /> Agregar
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -232,58 +200,31 @@ export function QuotationForm() {
             <div key={item.id} className="grid gap-3 p-4 border rounded-lg bg-muted/30">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">Item {index + 1}</span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeItem(item.id)}
-                  disabled={items.length === 1}
-                >
+                <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
               <div className="space-y-2">
                 <Label>Descripción</Label>
-                <Textarea
-                  value={item.description}
-                  onChange={(e) => updateItem(item.id, 'description', e.target.value)}
-                  placeholder="40ml de cerramiento a 2.50m de altura"
-                  rows={2}
-                />
+                <Textarea value={item.description} onChange={(e) => updateItem(item.id, 'description', e.target.value)} placeholder="40ml de cerramiento a 2.50m de altura" rows={2} />
               </div>
               <div className="grid gap-3 sm:grid-cols-4">
                 <div className="space-y-2">
                   <Label>Cantidad</Label>
-                  <Input
-                    type="number"
-                    value={item.quantity || ''}
-                    onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)}
-                    placeholder="40"
-                  />
+                  <Input type="number" value={item.quantity || ''} onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)} placeholder="40" />
                 </div>
                 <div className="space-y-2">
                   <Label>Unidad</Label>
-                  <Select
-                    value={item.unit}
-                    onValueChange={(value) => updateItem(item.id, 'unit', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={item.unit} onValueChange={(value) => updateItem(item.id, 'unit', value)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {UNITS.map(unit => (
-                        <SelectItem key={unit} value={unit}>{unit}</SelectItem>
-                      ))}
+                      {UNITS.map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>Precio Unitario</Label>
-                  <Input
-                    type="number"
-                    value={item.unitPrice || ''}
-                    onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)}
-                    placeholder="5000"
-                  />
+                  <Input type="number" value={item.unitPrice || ''} onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} placeholder="5000" />
                 </div>
                 <div className="space-y-2">
                   <Label>Total</Label>
@@ -294,7 +235,6 @@ export function QuotationForm() {
               </div>
             </div>
           ))}
-
           <div className="flex justify-end pt-4 border-t">
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Total Cotización</p>
@@ -307,66 +247,37 @@ export function QuotationForm() {
       {/* Provider & Bank Info */}
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Datos del Contratista</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">Datos del Contratista</CardTitle></CardHeader>
           <CardContent className="grid gap-4">
             <div className="space-y-2">
               <Label htmlFor="providerName">Nombre</Label>
-              <Input
-                id="providerName"
-                value={provider.name}
-                onChange={(e) => setProvider({ ...provider, name: e.target.value })}
-                placeholder="Jorge Vallejo"
-              />
+              <Input id="providerName" value={provider.name} onChange={(e) => setProvider({ ...provider, name: e.target.value })} placeholder="Jorge Vallejo" />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="docNumber">Cédula</Label>
-                <Input
-                  id="docNumber"
-                  value={provider.documentNumber}
-                  onChange={(e) => setProvider({ ...provider, documentNumber: e.target.value })}
-                  placeholder="18.506.917"
-                />
+                <Input id="docNumber" value={provider.documentNumber} onChange={(e) => setProvider({ ...provider, documentNumber: e.target.value })} placeholder="18.506.917" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Teléfono</Label>
-                <Input
-                  id="phone"
-                  value={provider.phone}
-                  onChange={(e) => setProvider({ ...provider, phone: e.target.value })}
-                  placeholder="311 344 0070"
-                />
+                <Input id="phone" value={provider.phone} onChange={(e) => setProvider({ ...provider, phone: e.target.value })} placeholder="311 344 0070" />
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Datos Bancarios</CardTitle>
-          </CardHeader>
+          <CardHeader><CardTitle className="text-lg">Datos Bancarios</CardTitle></CardHeader>
           <CardContent className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="bankEntity">Entidad</Label>
-                <Input
-                  id="bankEntity"
-                  value={bankInfo.entity}
-                  onChange={(e) => setBankInfo({ ...bankInfo, entity: e.target.value })}
-                  placeholder="Bancolombia"
-                />
+                <Input id="bankEntity" value={bankInfo.entity} onChange={(e) => setBankInfo({ ...bankInfo, entity: e.target.value })} placeholder="Bancolombia" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="accountType">Tipo de Cuenta</Label>
-                <Select
-                  value={bankInfo.accountType}
-                  onValueChange={(value) => setBankInfo({ ...bankInfo, accountType: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                <Select value={bankInfo.accountType} onValueChange={(value) => setBankInfo({ ...bankInfo, accountType: value })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Ahorros">Ahorros</SelectItem>
                     <SelectItem value="Corriente">Corriente</SelectItem>
@@ -376,21 +287,11 @@ export function QuotationForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="accountNumber">Número de Cuenta</Label>
-              <Input
-                id="accountNumber"
-                value={bankInfo.accountNumber}
-                onChange={(e) => setBankInfo({ ...bankInfo, accountNumber: e.target.value })}
-                placeholder="91209711252"
-              />
+              <Input id="accountNumber" value={bankInfo.accountNumber} onChange={(e) => setBankInfo({ ...bankInfo, accountNumber: e.target.value })} placeholder="91209711252" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="accountHolder">Titular</Label>
-              <Input
-                id="accountHolder"
-                value={bankInfo.accountHolder}
-                onChange={(e) => setBankInfo({ ...bankInfo, accountHolder: e.target.value })}
-                placeholder="María Nathali Gómez Jiménez"
-              />
+              <Input id="accountHolder" value={bankInfo.accountHolder} onChange={(e) => setBankInfo({ ...bankInfo, accountHolder: e.target.value })} placeholder="María Nathali Gómez Jiménez" />
             </div>
           </CardContent>
         </Card>
@@ -398,28 +299,14 @@ export function QuotationForm() {
 
       {/* Notes & Legal */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Notas Adicionales</CardTitle>
-        </CardHeader>
+        <CardHeader><CardTitle className="text-lg">Notas Adicionales</CardTitle></CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="notes">Observaciones</Label>
-            <Textarea
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Notas adicionales para la cotización..."
-              rows={3}
-            />
+            <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionales para la cotización..." rows={3} />
           </div>
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="legalText"
-              checked={includeLegalText}
-              onChange={(e) => setIncludeLegalText(e.target.checked)}
-              className="h-4 w-4 rounded border-input"
-            />
+            <input type="checkbox" id="legalText" checked={includeLegalText} onChange={(e) => setIncludeLegalText(e.target.checked)} className="h-4 w-4 rounded border-input" />
             <Label htmlFor="legalText" className="text-sm font-normal">
               Incluir texto legal sobre retención en la fuente y seguridad social
             </Label>
@@ -430,12 +317,11 @@ export function QuotationForm() {
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
         <Button onClick={() => setShowPreview(true)} className="flex-1 sm:flex-none">
-          <Eye className="h-4 w-4 mr-2" />
-          Vista Previa
+          <Eye className="h-4 w-4 mr-2" /> Vista Previa
         </Button>
-        <Button variant="outline" onClick={handleSave} className="flex-1 sm:flex-none">
+        <Button variant="outline" onClick={handleSave} disabled={isSaving} className="flex-1 sm:flex-none">
           <Save className="h-4 w-4 mr-2" />
-          Guardar
+          {isSaving ? 'Guardando...' : 'Guardar'}
         </Button>
       </div>
     </div>

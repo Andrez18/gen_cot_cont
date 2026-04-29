@@ -7,18 +7,24 @@ export function formatCurrency(amount: number): string {
   }).format(amount)
 }
 
-export function formatDate(date: string): string {
-  return new Date(date).toLocaleDateString('es-CO', {
-    day: 'numeric',
-    month: 'long',
+export function formatShortDate(date: string): string {
+  if (!date) return ''
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return date  
+  return d.toLocaleDateString('es-CO', {
+    day: '2-digit',
+    month: '2-digit',
     year: 'numeric',
   })
 }
 
-export function formatShortDate(date: string): string {
-  return new Date(date).toLocaleDateString('es-CO', {
-    day: '2-digit',
-    month: '2-digit',
+export function formatDate(date: string): string {
+  if (!date) return ''
+  const d = new Date(date)
+  if (isNaN(d.getTime())) return date
+  return d.toLocaleDateString('es-CO', {
+    day: 'numeric',
+    month: 'long',
     year: 'numeric',
   })
 }
@@ -137,8 +143,8 @@ export const DEFAULT_BANK_INFO = {
 }
 
 export const DEFAULT_CLIENT_INFO = {
-  companyName: 'ANTIOQUEÑA COMBUSTIBLES S.A.S',
+  companyName: 'EMPRESA S.A.S',
   nit: '900.207.854-8',
-  location: 'EDS Manglar',
+  location: 'EDS ejemplo',
   contactPerson: '',
 }
