@@ -127,10 +127,10 @@ export function generateId(): string {
 export const DEFAULT_LEGAL_TEXT = `Para determinar la naturaleza de mis ingresos conforme a lo contemplado en el Título V Capítulo I del Estatuto Tributario modificado por la Ley 1819 de 2016, me permito certificar bajo la gravedad de juramento que: Mis ingresos corresponden a honorarios por prestación de servicios calificados y/o no calificados y no poseo 2 o más empleados o contratistas para el desarrollo de esta actividad, o en caso de haberlos contratado su vinculación no fue superior a 90 días de forma continua o discontinua. De acuerdo a lo anterior me permito solicitar que el valor de la presente cuenta de cobro sea llevado a la tabla de retención en la fuente sobre salarios Art. 383 del Estatuto Tributario para establecer el correspondiente descuento ya que mis ingresos no superan las 95 UVT mensuales. Adicionalmente certifico bajo la gravedad de juramento que he determinado mi ingreso base de cotización (IBC) para realizar los aportes al sistema de seguridad social integral observando estrictamente lo contemplado en el artículo 135 de la Ley 1753 de 2015, estableciendo como base el 40% del valor neto de mis ingresos, una vez deducidas las expensas propias de mi actividad durante el respectivo mes y en los casos en que es procedente tal depuración, expensas que cumplen con los requisitos del artículo 107 del Estatuto Tributario.`
 
 export const DEFAULT_PROVIDER_INFO = {
-  name: 'Jorge Vallejo',
+  name: 'Persona ejemplo',
   documentType: 'CC',
-  documentNumber: '18.506.917',
-  phone: '311 344 0070',
+  documentNumber: '00.000.000',
+  phone: '000 000 0000',
   email: '',
   address: '',
 }
@@ -138,13 +138,13 @@ export const DEFAULT_PROVIDER_INFO = {
 export const DEFAULT_BANK_INFO = {
   entity: 'Bancolombia',
   accountType: 'Ahorros',
-  accountNumber: '91209711252',
-  accountHolder: 'María Nathali Gómez Jiménez',
+  accountNumber: '00000000000',
+  accountHolder: 'Persona titular',
 }
 
 export const DEFAULT_CLIENT_INFO = {
   companyName: 'EMPRESA S.A.S',
-  nit: '900.207.854-8',
+  nit: '000.000.000-0',
   location: 'EDS ejemplo',
   contactPerson: '',
 }
