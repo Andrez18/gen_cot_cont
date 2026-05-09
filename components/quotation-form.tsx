@@ -29,11 +29,13 @@ import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useQuotations } from '@/hooks/use-supabase-storage'  
 import { useNotification } from '@/hooks/use_notification'
+import { useSettings } from '@/hooks/use-settings'
 
 const UNITS = ['ml', 'm²', 'm³', 'und', 'global', 'viaje', 'día', 'hora', 'kg', 'lt']
 
 export function QuotationForm() {
   const { saveQuotation } = useQuotations()
+  const { providerInfo, bankInfo, clientInfo, isLoaded } = useSettings()
   const { success, error: notifError, loading, dismiss } = useNotification()  
 
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
@@ -46,9 +48,9 @@ export function QuotationForm() {
   const [documentNumber, setDocumentNumber] = useState('')
   const [date, setDate] = useState('')
   const [city, setCity] = useState('Medellín, Antioquia')
-  const [client, setClient] = useState<ClientInfo>(DEFAULT_CLIENT_INFO)
-  const [provider, setProvider] = useState<ProviderInfo>(savedProvider)
-  const [bankInfo, setBankInfo] = useState<BankInfo>(savedBank)
+  const [provider, setProvider] = useState(DEFAULT_PROVIDER_INFO)
+  const [bankInfoState, setBankInfo] = useState(DEFAULT_BANK_INFO)
+  const [client, setClient] = useState(DEFAULT_CLIENT_INFO)
   const [items, setItems] = useState<LineItem[]>([
     { id: generateId(), description: '', quantity: 0, unit: 'ml', unitPrice: 0, total: 0 }
   ])
@@ -62,6 +64,13 @@ export function QuotationForm() {
 
   useEffect(() => { setProvider(savedProvider) }, [savedProvider])
   useEffect(() => { setBankInfo(savedBank) }, [savedBank])
+  useEffect(() => {
+    if (isLoaded) {
+      setProvider(providerInfo)
+      setBankInfo(bankInfo)
+      setClient(clientInfo)
+    }
+  }, [isLoaded])
 
   const updateItem = (id: string, field: keyof LineItem, value: string | number) => {
     setItems(prev => prev.map(item => {

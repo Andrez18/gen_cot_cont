@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useNotification } from '@/hooks/use_notification'
+import { useSettings } from '@/hooks/use-settings'
+
 import {
   Select,
   SelectContent,
@@ -31,6 +33,7 @@ import { useInvoices } from '@/hooks/use-supabase-storage'
 
 export function InvoiceForm() {
   const { saveInvoice } = useInvoices()  
+  const { providerInfo, bankInfo, clientInfo, isLoaded } = useSettings()
 
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
   const { value: savedBank, setValue: setSavedBank } = useLocalStorage<BankInfo>('bank', DEFAULT_BANK_INFO)
@@ -43,9 +46,9 @@ export function InvoiceForm() {
   const [documentNumber, setDocumentNumber] = useState('')
   const [date, setDate] = useState('')
   const [city, setCity] = useState('Medellín')
-  const [client, setClient] = useState<ClientInfo>(DEFAULT_CLIENT_INFO)
-  const [provider, setProvider] = useState<ProviderInfo>(savedProvider)
-  const [bankInfo, setBankInfo] = useState<BankInfo>(savedBank)
+  const [client, setClient] = useState(DEFAULT_CLIENT_INFO)
+  const [provider, setProvider] = useState(DEFAULT_PROVIDER_INFO)
+  const [bankInfoState, setBankInfo] = useState(DEFAULT_BANK_INFO)
   const [concept, setConcept] = useState('')
   const [amount, setAmount] = useState<number>(0)
 
@@ -53,6 +56,14 @@ export function InvoiceForm() {
     setDocumentNumber(generateDocumentNumber())
     setDate(new Date().toISOString().split('T')[0])
   }, [])
+
+  useEffect(() => {
+    if (isLoaded) {
+      setProvider(providerInfo)
+      setBankInfo(bankInfo)
+      setClient(clientInfo)
+    }
+  }, [isLoaded])
 
   useEffect(() => { setProvider(savedProvider) }, [savedProvider])
   useEffect(() => { setBankInfo(savedBank) }, [savedBank])
