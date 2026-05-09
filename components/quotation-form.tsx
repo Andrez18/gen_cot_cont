@@ -27,22 +27,22 @@ import {
 import { QuotationPreview } from './quotation-preview'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 import { useLocalStorage } from '@/hooks/use-local-storage'
-import { useQuotations } from '@/hooks/use-supabase-storage'  // ← NUEVO
+import { useQuotations } from '@/hooks/use-supabase-storage'  
+import { useNotification } from '@/hooks/use_notification'
 
 const UNITS = ['ml', 'm²', 'm³', 'und', 'global', 'viaje', 'día', 'hora', 'kg', 'lt']
 
 export function QuotationForm() {
-  // ── Supabase ──────────────────────────────────────────
-  const { saveQuotation } = useQuotations()  // ← NUEVO
+  const { saveQuotation } = useQuotations()
+  const { success, error: notifError, loading, dismiss } = useNotification()  
 
-  // ── localStorage solo para proveedor y banco (autocompletado) ──
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
   const { value: savedBank, setValue: setSavedBank } = useLocalStorage<BankInfo>('bank', DEFAULT_BANK_INFO)
 
   const { generatePdf, isGenerating } = usePdfGenerator()
 
   const [showPreview, setShowPreview] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)  // ← NUEVO
+  const [isSaving, setIsSaving] = useState(false)  
   const [documentNumber, setDocumentNumber] = useState('')
   const [date, setDate] = useState('')
   const [city, setCity] = useState('Medellín, Antioquia')
@@ -100,25 +100,31 @@ export function QuotationForm() {
     createdAt: new Date().toISOString(),
   }
 
-  // ── REEMPLAZADO: ahora guarda en Supabase ──────────────
   const handleSave = async () => {
     setIsSaving(true)
+    const loadingId = loading('Guardando cotización...')
     const { error } = await saveQuotation(quotation)
+    dismiss(loadingId)
     setIsSaving(false)
+
     if (error) {
-      alert('Error al guardar: ' + error.message)
+      notifError('Error al guardar', error.message)
       return
     }
     setSavedProvider(provider)
     setSavedBank(bankInfo)
-    alert('Cotización guardada exitosamente')
+    success('Cotización guardada', 'El documento fue guardado exitosamente')
   }
 
   const handleDownloadPdf = async () => {
+    const loadingId = loading('Generando PDF...')
     try {
       await generatePdf('quotation-preview', `Cotizacion-${documentNumber}`)
+      dismiss(loadingId)
+      success('PDF generado', 'El archivo se descargó correctamente')
     } catch {
-      alert('Error al generar el PDF')
+      dismiss(loadingId)
+      notifError('Error al generar el PDF', 'Intentá de nuevo')
     }
   }
 

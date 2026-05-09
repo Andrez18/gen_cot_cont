@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { NotificationProvider } from '@/hooks/use_notification'
+import { AuthGuard } from '@/components/auth-guard'
 import './globals.css'
 
 const geist = Geist({
@@ -57,8 +59,12 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="font-sans antialiased min-h-screen">
-        {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        <NotificationProvider>
+          <AuthGuard>
+            {children}
+            {process.env.NODE_ENV === 'production' && <Analytics />}
+          </AuthGuard>
+        </NotificationProvider>
       </body>
     </html>
   )

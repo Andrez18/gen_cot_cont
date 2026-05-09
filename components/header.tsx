@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, Settings, Menu } from 'lucide-react'
+import { FileText, Settings, Menu, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -8,15 +8,27 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import Link from 'next/link'
+import { useAuth } from '@/hooks/use-auth'
+import { useNotification } from '@/hooks/use_notification' 
 
 interface HeaderProps {
   onSettingsClick?: () => void
 }
 
 export function Header({ onSettingsClick }: HeaderProps) {
+  const { user, signOut } = useAuth()
+  const { success } = useNotification()
+
+  const handleSignOut = async () => {
+    await signOut()
+    success('Sesión cerrada', user?.email ?? '')
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
       <div className="container flex h-16 items-center justify-between px-4">
+
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
             <FileText className="h-5 w-5 text-primary-foreground" />
@@ -27,6 +39,7 @@ export function Header({ onSettingsClick }: HeaderProps) {
           </div>
         </Link>
 
+        {/* Nav desktop */}
         <nav className="hidden md:flex items-center gap-1">
           <Button variant="ghost" asChild>
             <Link href="/">Inicio</Link>
@@ -48,8 +61,26 @@ export function Header({ onSettingsClick }: HeaderProps) {
               <Settings className="h-5 w-5" />
             </Button>
           )}
+
+          {/* Usuario + cerrar sesión — desktop */}
+          {user && (
+            <div className="flex items-center gap-2 ml-2 pl-2 border-l">
+              <span className="text-xs text-muted-foreground max-w-[120px] truncate">
+                {user.email}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleSignOut}
+                title="Cerrar sesión"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </nav>
 
+        {/* Nav mobile */}
         <Sheet>
           <SheetTrigger asChild className="md:hidden">
             <Button variant="ghost" size="icon">
@@ -79,9 +110,28 @@ export function Header({ onSettingsClick }: HeaderProps) {
                   Configuración
                 </Button>
               )}
+
+              {/* Separador + cerrar sesión — mobile */}
+              {user && (
+                <>
+                  <div className="border-t my-2" />
+                  <div className="px-3 py-1">
+                    <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    className="justify-start text-destructive hover:text-destructive"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Cerrar sesión
+                  </Button>
+                </>
+              )}
             </nav>
           </SheetContent>
         </Sheet>
+
       </div>
     </header>
   )

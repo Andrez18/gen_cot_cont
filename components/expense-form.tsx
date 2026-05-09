@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react'
 import { formatCurrency } from '@/lib/document-utils'
 import { useExpenseRecords, useExpenseReports, usePhotoUpload } from '@/hooks/use-supabase-storage'
+import { useNotification } from '@/hooks/use_notification'
 
 type TipoRegistro = 'gasto' | 'ingreso'
 
@@ -36,6 +37,7 @@ export function ExpenseForm() {
   const [vistaInformes, setVistaInformes] = useState(false)
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const { success, error: notifError, loading, dismiss, warning } = useNotification()
 
   const ingresos = registros.filter(r => r.tipo === 'ingreso').reduce((a, r) => a + r.monto, 0)
   const gastos   = registros.filter(r => r.tipo === 'gasto').reduce((a, r) => a + r.monto, 0)
@@ -55,21 +57,33 @@ export function ExpenseForm() {
     if (isNaN(montoNum) || montoNum <= 0) { setErrMonto(true); hayError = true }
     if (hayError) {
       setTimeout(() => { setErrDesc(false); setErrMonto(false) }, 1500)
+      warning('Campos incompletos', 'Completá la descripción y el monto')
       return
     }
 
     let foto_url: string | undefined
     if (fotoFile) {
+      const loadingId = loading('Subiendo foto...')
       foto_url = await uploadPhoto(fotoFile) ?? undefined
+      dismiss(loadingId)
+      if (!foto_url) {
+        notifError('Error al subir la foto', 'Intentá de nuevo')
+        return
+      }
     }
 
     await addRecord({ descripcion: descripcion.trim(), monto: montoNum, cat, tipo, fecha: hoy(), foto_url })
     setDesc(''); setMonto(''); setCat(''); setTipo('gasto')
     setFotoFile(null); setFotoPreview(null)
     setInformeActual(null)
-  }, [descripcion, monto, cat, tipo, fotoFile, addRecord, uploadPhoto])
+    success(
+      tipo === 'gasto' ? 'Gasto registrado' : 'Ingreso registrado',
+      `${descripcion} — ${formatCurrency(montoNum)}`
+    )
+  }, [descripcion, monto, cat, tipo, fotoFile, addRecord, uploadPhoto, success, notifError, warning, loading, dismiss])
 
   const generarInforme = useCallback(async () => {
+    const loadingId = loading('Generando informe...')
     const gastosPorCat = registros
       .filter(r => r.tipo === 'gasto')
       .reduce<Record<string, number>>((acc, r) => {
@@ -79,21 +93,28 @@ export function ExpenseForm() {
       }, {})
 
     const informe = {
-      fecha: hoy(),
-      ingresos,
-      gastos,
-      balance,
+      fecha: hoy(), ingresos, gastos, balance,
       gastos_por_cat: gastosPorCat,
       total_registros: registros.length,
     }
 
-    const { data } = await saveReport(informe)
+    const { data, error } = await saveReport(informe)
+    
+    if (error) {
+      dismiss(loadingId)
+      notifError('Error al generar informe', error.message)
+      return
+    }
+
     setInformeActual(data)
 
     if (data?.id) {
-      await clearRecords(registros.map(r => r.id), data.id)  
+      await clearRecords(registros.map(r => r.id), data.id)
     }
-  }, [registros, ingresos, gastos, balance, saveReport, clearRecords])
+
+    dismiss(loadingId)
+    success('Informe generado', `${registros.length} registros cerrados correctamente`)
+  }, [registros, ingresos, gastos, balance, saveReport, clearRecords, success, notifError, loading, dismiss])
 
   if (!isLoaded) {
     return <div style={{ padding: '32px', fontFamily: 'Arial, sans-serif', color: '#6b7280' }}>Cargando...</div>

@@ -15,8 +15,8 @@ import { InvoicePreview } from './invoice-preview'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { useQuotations, useInvoices, useExpenseRecords, useExpenseReports } from '@/hooks/use-supabase-storage'
 import { supabase } from '@/lib/supabase'
+import { useNotification } from '@/hooks/use_notification'
 
-// ── Mappers snake_case → camelCase ────────────────────────
 function mapQuotation(q: any): Quotation {
   return {
     id: q.id,
@@ -50,7 +50,6 @@ function mapInvoice(i: any): Invoice {
   }
 }
 
-// ── Fila de registro individual ───────────────────────────
 function RegistroRow({ r, onVerFoto }: { r: any; onVerFoto: (url: string) => void }) {
   return (
     <div style={{
@@ -91,7 +90,6 @@ function RegistroRow({ r, onVerFoto }: { r: any; onVerFoto: (url: string) => voi
   )
 }
 
-// ── Informe expandible ────────────────────────────────────
 function InformeCard({
   informe, registros, index, enProgreso, onVerFoto,
 }: {
@@ -197,7 +195,6 @@ function InformeCard({
   )
 }
 
-// ── Tab gastos ────────────────────────────────────────────
 function GastosTab({ onVerFoto }: { onVerFoto: (url: string) => void }) {
   const { records: registros, isLoaded: regLoaded } = useExpenseRecords()
   const { reports: informes, isLoaded: infLoaded } = useExpenseReports()
@@ -268,11 +265,11 @@ function GastosTab({ onVerFoto }: { onVerFoto: (url: string) => void }) {
   )
 }
 
-// ── Componente principal ──────────────────────────────────
 export function DocumentHistory() {
   const { quotations, isLoaded: quotationsLoaded } = useQuotations()
   const { invoices, isLoaded: invoicesLoaded } = useInvoices()
   const { generatePdf, isGenerating } = usePdfGenerator()
+  const { success, error: notifError, warning } = useNotification()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
@@ -290,15 +287,25 @@ export function DocumentHistory() {
 
   const deleteQuotation = useCallback(async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar esta cotización?')) return
-    await supabase.from('quotations').delete().eq('id', id)
+    const { error } = await supabase.from('quotations').delete().eq('id', id)
+    if (error) {
+      notifError('Error al eliminar', error.message)
+      return
+    }
+    success('Cotización eliminada')
     window.location.reload()
-  }, [])
+  }, [success, notifError])
 
   const deleteInvoice = useCallback(async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar esta cuenta de cobro?')) return
-    await supabase.from('invoices').delete().eq('id', id)
+    const { error } = await supabase.from('invoices').delete().eq('id', id)
+    if (error) {
+      notifError('Error al eliminar', error.message)
+      return
+    }
+    success('Cuenta de cobro eliminada')
     window.location.reload()
-  }, [])
+  }, [success, notifError])
 
   const handleDownloadQuotationPdf = async () => {
     if (!selectedQuotation) return

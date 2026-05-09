@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { useNotification } from '@/hooks/use_notification'
 import {
   Select,
   SelectContent,
@@ -26,20 +27,19 @@ import {
 import { InvoicePreview } from './invoice-preview'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 import { useLocalStorage } from '@/hooks/use-local-storage'
-import { useInvoices } from '@/hooks/use-supabase-storage'  // ← NUEVO
+import { useInvoices } from '@/hooks/use-supabase-storage'  
 
 export function InvoiceForm() {
-  // ── Supabase ──────────────────────────────────────────
-  const { saveInvoice } = useInvoices()  // ← NUEVO
+  const { saveInvoice } = useInvoices()  
 
-  // ── localStorage solo para proveedor y banco (autocompletado) ──
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
   const { value: savedBank, setValue: setSavedBank } = useLocalStorage<BankInfo>('bank', DEFAULT_BANK_INFO)
 
   const { generatePdf, isGenerating } = usePdfGenerator()
+  const { success, error: notifError, loading, dismiss } = useNotification()
 
   const [showPreview, setShowPreview] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)  // ← NUEVO
+  const [isSaving, setIsSaving] = useState(false)  
   const [documentNumber, setDocumentNumber] = useState('')
   const [date, setDate] = useState('')
   const [city, setCity] = useState('Medellín')
@@ -71,25 +71,31 @@ export function InvoiceForm() {
     createdAt: new Date().toISOString(),
   }
 
-  // ── REEMPLAZADO: ahora guarda en Supabase ──────────────
   const handleSave = async () => {
     setIsSaving(true)
+    const loadingId = loading('Guardando cuenta de cobro...')
     const { error } = await saveInvoice(invoice)
+    dismiss(loadingId)
     setIsSaving(false)
+
     if (error) {
-      alert('Error al guardar: ' + error.message)
+      notifError('Error al guardar', error.message)
       return
     }
     setSavedProvider(provider)
     setSavedBank(bankInfo)
-    alert('Cuenta de cobro guardada exitosamente')
+    success('Cuenta de cobro guardada', 'El documento fue guardado exitosamente')
   }
 
   const handleDownloadPdf = async () => {
+    const loadingId = loading('Generando PDF...')
     try {
       await generatePdf('invoice-preview', `CuentaCobro-${documentNumber}`)
+      dismiss(loadingId)
+      success('PDF generado', 'El archivo se descargó correctamente')
     } catch {
-      alert('Error al generar el PDF')
+      dismiss(loadingId)
+      notifError('Error al generar el PDF', 'Intentá de nuevo')
     }
   }
 
