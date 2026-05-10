@@ -53,7 +53,7 @@ export function Header({ onSettingsClick }: HeaderProps) {
           </div>
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pr-8">
           {/* Email visible en desktop con badge */}
           {user && (
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/50">
