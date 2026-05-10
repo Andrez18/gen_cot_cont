@@ -1,176 +1,223 @@
 'use client'
 
 import Link from 'next/link'
-import { FileText, Receipt, History, ArrowRight, Smartphone } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { useEffect, useState } from 'react'
+import { FileText, Receipt, History, ArrowRight, Smartphone, TrendingUp, Shield, Zap, Sparkles, CheckCircle2 } from 'lucide-react'
 import { Header } from '@/components/header'
-import { InstallPrompt } from '@/components/install-prompt'
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => { setMounted(true) }, [])
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-background">
       <Header />
-      
+
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative overflow-hidden py-16 md:py-24 lg:py-32">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-          <div className="container px-4 relative">
-            <div className="max-w-3xl mx-auto text-center">
-              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl lg:text-6xl text-balance">
-                Genera <span className="text-primary">Cotizaciones</span> y{' '}
-                <span className="text-accent">Cuentas de Cobro</span> Profesionales
-              </h1>
-              <p className="mt-6 text-lg text-muted-foreground max-w-2xl mx-auto text-pretty">
-                Crea documentos comerciales de forma rápida, guárdalos y descárgalos en PDF. 
-                Perfecto para contratistas y trabajadores independientes en Colombia.
-              </p>
-              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
-                <Button asChild size="lg" className="gap-2">
-                  <Link href="/quotation/new">
-                    <FileText className="h-5 w-5" />
-                    Nueva Cotización
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline" className="gap-2">
-                  <Link href="/invoice/new">
-                    <Receipt className="h-5 w-5" />
-                    Nueva Cuenta de Cobro
-                  </Link>
-                </Button>
-              </div>
+        <section className="relative overflow-hidden border-b border-border">
+          {/* Grid Pattern */}
+          <div 
+            className="absolute inset-0 opacity-50 pointer-events-none"
+            style={{
+              backgroundImage: `linear-gradient(var(--border) 1px, transparent 1px),
+                                linear-gradient(90deg, var(--border) 1px, transparent 1px)`,
+              backgroundSize: '40px 40px',
+            }}
+          />
+          
+          {/* Decorative Circles */}
+          <div className="absolute -top-32 -right-32 size-[500px] rounded-full border border-border opacity-40 pointer-events-none" />
+          <div className="absolute -top-16 -right-16 size-[300px] rounded-full border border-border opacity-30 pointer-events-none" />
+
+          <div className="relative max-w-[720px] mx-auto px-6 py-20 md:py-28 text-center">
+            {/* Badge */}
+            <div 
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full border border-border bg-secondary text-xs text-muted-foreground mb-7 transition-all duration-500 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+            >
+              <span className="size-1.5 rounded-full bg-chart-2 inline-block" />
+              Para contratistas independientes en Colombia
+            </div>
+
+            {/* Main Heading */}
+            <h1 
+              className={`text-4xl md:text-5xl lg:text-6xl font-medium tracking-tight text-foreground leading-[1.1] mb-5 transition-all duration-500 delay-100 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+            >
+              <span className="text-balance">
+                Cotizaciones y cobros{' '}
+              </span>
+              <span className="italic border-b-2 border-foreground pb-0.5">
+                sin complicaciones
+              </span>
+            </h1>
+
+            {/* Subtitle */}
+            <p 
+              className={`text-base md:text-lg text-muted-foreground max-w-md mx-auto mb-10 leading-relaxed transition-all duration-500 delay-200 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+            >
+              Genera documentos profesionales, controla tus gastos y descarga PDFs listos para entregar.
+            </p>
+
+            {/* CTA Buttons */}
+            <div 
+              className={`flex flex-col sm:flex-row gap-3 justify-center transition-all duration-500 delay-300 ${mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'}`}
+            >
+              <Link 
+                href="/quotation/new"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity"
+              >
+                <FileText size={16} />
+                Nueva cotizacion
+              </Link>
+              <Link 
+                href="/invoice/new"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-lg border border-border bg-background text-foreground font-medium text-sm hover:bg-secondary transition-colors"
+              >
+                <Receipt size={16} />
+                Nueva cuenta de cobro
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Stats Section */}
+        <section className="border-b border-border bg-background">
+          <div className="max-w-[720px] mx-auto px-6">
+            <div className="grid grid-cols-3 divide-x divide-border">
+              {[
+                { value: '100%', label: 'Gratis para usar' },
+                { value: 'PDF', label: 'Descarga instantanea' },
+                { value: '∞', label: 'Documentos sin limite' },
+              ].map((stat) => (
+                <div key={stat.label} className="py-7 px-4 text-center">
+                  <div className="text-2xl md:text-3xl font-medium text-foreground mb-1">{stat.value}</div>
+                  <div className="text-xs text-muted-foreground">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* Features Section */}
-        <section className="py-16 md:py-24 bg-muted/30">
-          <div className="container px-4">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl font-bold sm:text-3xl">¿Qué puedes hacer?</h2>
-              <p className="mt-2 text-muted-foreground">Todo lo que necesitas para gestionar tus documentos comerciales</p>
+        <section className="py-20 md:py-24 px-6 bg-muted">
+          <div className="max-w-[720px] mx-auto">
+            {/* Section Header */}
+            <div className="mb-12">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mb-3">Funcionalidades</p>
+              <h2 className="text-2xl md:text-3xl font-medium text-foreground tracking-tight">
+                Todo en un solo lugar
+              </h2>
             </div>
-            
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
-              <Card className="group hover:shadow-lg transition-all hover:-translate-y-1">
-                <CardHeader>
-                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                    <FileText className="h-6 w-6 text-primary" />
-                  </div>
-                  <CardTitle className="text-xl">Cotizaciones</CardTitle>
-                  <CardDescription>
-                    Genera cotizaciones detalladas con múltiples items, cantidades y precios unitarios
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button asChild variant="ghost" className="gap-2 p-0 h-auto">
-                    <Link href="/quotation/new">
-                      Crear cotización
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
 
-              <Card className="group hover:shadow-lg transition-all hover:-translate-y-1">
-                <CardHeader>
-                  <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
-                    <Receipt className="h-6 w-6 text-accent" />
+            {/* Feature Cards - Stacked List */}
+            <div className="flex flex-col border border-border rounded-xl overflow-hidden bg-border gap-px">
+              {[
+                { 
+                  icon: FileText, 
+                  title: 'Cotizaciones detalladas', 
+                  desc: 'Agrega multiples items con cantidad, unidad y precio unitario. El total se calcula solo.', 
+                  href: '/quotation/new', 
+                  label: 'Crear cotizacion',
+                },
+                { 
+                  icon: Receipt, 
+                  title: 'Cuentas de cobro', 
+                  desc: 'Con datos bancarios, certificacion tributaria y firma integrada. Listas para entregar.', 
+                  href: '/invoice/new', 
+                  label: 'Crear cuenta',
+                },
+                { 
+                  icon: TrendingUp, 
+                  title: 'Control de gastos', 
+                  desc: 'Registra gastos e ingresos con fotos de recibos. Genera informes cuando quieras.', 
+                  href: '/expenses/new', 
+                  label: 'Ver gastos',
+                },
+                { 
+                  icon: History, 
+                  title: 'Historial completo', 
+                  desc: 'Todos tus documentos guardados en la nube. Busca, visualiza y descarga en PDF.', 
+                  href: '/history', 
+                  label: 'Ver historial',
+                },
+              ].map(({ icon: Icon, title, desc, href, label }) => (
+                <div
+                  key={title}
+                  className="flex items-start gap-5 p-7 bg-background"
+                >
+                  <div className="size-10 rounded-lg border border-border bg-secondary flex items-center justify-center shrink-0">
+                    <Icon size={18} className="text-muted-foreground" />
                   </div>
-                  <CardTitle className="text-xl">Cuentas de Cobro</CardTitle>
-                  <CardDescription>
-                    Crea cuentas de cobro profesionales con datos bancarios y certificaciones tributarias
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button asChild variant="ghost" className="gap-2 p-0 h-auto">
-                    <Link href="/invoice/new">
-                      Crear cuenta de cobro
-                      <ArrowRight className="h-4 w-4" />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-[15px] font-medium text-foreground mb-1.5">{title}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed mb-3">{desc}</p>
+                    <Link 
+                      href={href}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-foreground hover:gap-2 transition-all"
+                    >
+                      {label} 
+                      <ArrowRight size={13} />
                     </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card className="group hover:shadow-lg transition-all hover:-translate-y-1">
-                <CardHeader>
-                  <div className="h-12 w-12 rounded-xl bg-chart-3/10 flex items-center justify-center mb-4 group-hover:bg-chart-3/20 transition-colors">
-                    <History className="h-6 w-6 text-chart-3" />
                   </div>
-                  <CardTitle className="text-xl">Historial</CardTitle>
-                  <CardDescription>
-                    Accede a todos tus documentos guardados, visualízalos y descárgalos cuando quieras
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button asChild variant="ghost" className="gap-2 p-0 h-auto">
-                    <Link href="/history">
-                      Ver historial
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
+                </div>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* PWA Section */}
-        <section className="py-16 md:py-24">
-          <div className="container px-4">
-            <div className="max-w-4xl mx-auto">
-              <Card className="overflow-hidden">
-                <div className="grid md:grid-cols-2 gap-0">
-                  <div className="p-8 md:p-12 flex flex-col justify-center">
-                    <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center mb-6">
-                      <Smartphone className="h-6 w-6 text-primary-foreground" />
-                    </div>
-                    <h3 className="text-2xl font-bold mb-3">Instala la App</h3>
-                    <p className="text-muted-foreground mb-6">
-                      Agrega CotiFactura a tu pantalla de inicio y accede rápidamente desde tu celular, 
-                      incluso sin conexión a internet.
-                    </p>
-                    <div className="text-sm text-muted-foreground space-y-2">
-                      <p>✓ Funciona sin conexión</p>
-                      <p>✓ Acceso rápido desde tu celular</p>
-                      <p>✓ Tus datos siempre disponibles</p>
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-primary/10 to-accent/10 p-8 md:p-12 flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-primary mb-4 shadow-lg">
-                        <FileText className="h-10 w-10 text-primary-foreground" />
-                      </div>
-                      <p className="font-semibold">CotiFactura</p>
-                      <p className="text-sm text-muted-foreground">Cotizaciones & Cobros</p>
-                    </div>
-                  </div>
+        {/* Benefits Section */}
+        <section className="py-16 px-6 bg-muted">
+          <div className="max-w-[720px] mx-auto">
+            <div className="grid sm:grid-cols-3 gap-3">
+              {[
+                { icon: Zap, title: 'Rapido', desc: 'Genera un documento en menos de 2 minutos' },
+                { icon: Shield, title: 'Seguro', desc: 'Tus datos guardados en la nube con autenticacion' },
+                { icon: Smartphone, title: 'Movil', desc: 'Instalable como app en tu celular' },
+              ].map(({ icon: Icon, title, desc }) => (
+                <div key={title} className="p-6 rounded-xl border border-border bg-background">
+                  <Icon size={20} className="text-muted-foreground mb-3" />
+                  <h3 className="text-sm font-medium text-foreground mb-1.5">{title}</h3>
+                  <p className="text-[13px] text-muted-foreground leading-relaxed">{desc}</p>
                 </div>
-              </Card>
+              ))}
             </div>
+          </div>
+        </section>
+
+        {/* Final CTA Section */}
+        <section className="py-20 md:py-24 px-6 border-t border-border bg-background">
+          <div className="max-w-md mx-auto text-center">
+            <h2 className="text-2xl md:text-3xl font-medium text-foreground tracking-tight mb-4">
+              Empieza ahora, es gratis
+            </h2>
+            <p className="text-muted-foreground mb-8 leading-relaxed text-[15px]">
+              Sin planes, sin tarjetas. Solo crea tu cuenta y empieza a generar documentos profesionales.
+            </p>
+            <Link 
+              href="/quotation/new"
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:opacity-90 transition-opacity"
+            >
+              Crear primera cotizacion
+              <ArrowRight size={15} />
+            </Link>
           </div>
         </section>
       </main>
 
       {/* Footer */}
-      <footer className="border-t py-8">
-        <div className="container px-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-                <FileText className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="font-semibold">CotiFactura</span>
+      <footer className="border-t border-border py-6 px-6 bg-background">
+        <div className="max-w-[720px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <div className="size-7 rounded-md bg-primary flex items-center justify-center">
+              <FileText size={14} className="text-primary-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground text-center">
-              Diseñado para contratistas y trabajadores independientes en Colombia
-            </p>
+            <span className="font-medium text-foreground text-sm">CotiFactura</span>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Hecho para contratistas colombianos
+          </p>
         </div>
       </footer>
-
-      <InstallPrompt />
     </div>
   )
 }
