@@ -1,6 +1,6 @@
 'use client'
 
-import { FileText, Settings, Menu, LogOut, Home, FileSpreadsheet, Receipt, TrendingUp, History } from 'lucide-react'
+import { FileText, Settings, Menu, LogOut, Home, FileSpreadsheet, Receipt, TrendingUp, History, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -34,49 +34,77 @@ export function Header({ onSettingsClick }: HeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-      <div className="container flex h-16 items-center justify-between px-4">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
 
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <FileText className="h-5 w-5 text-primary-foreground" />
+        {/* Logo con gradiente */}
+        <Link href="/" className="group flex items-center gap-3 pl-8 transition-transform duration-200 hover:scale-[1.02]">
+          <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-primary transition-all duration-300 group-hover:shadow-blue-500/40 group-hover:scale-105">
+            <FileText className="h-5 w-5 text-white" />
+            <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
           <div className="flex flex-col">
-            <span className="text-lg font-semibold leading-tight">CotiFactura</span>
-            <span className="text-xs text-muted-foreground leading-tight">Cotizaciones & Cobros</span>
+            <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-xl font-bold tracking-tight text-transparent">
+              CotiFactura
+            </span>
+            <span className="text-[11px] font-medium text-muted-foreground/80 tracking-wide">
+              Cotizaciones & Cobros
+            </span>
           </div>
         </Link>
 
-        {/* Menú hamburguesa — igual en mobile y desktop */}
-        <div className="flex items-center gap-2">
-          {/* Email visible en desktop */}
+        <div className="flex items-center gap-3">
+          {/* Email visible en desktop con badge */}
           {user && (
-            <span className="hidden md:block text-xs text-muted-foreground max-w-[160px] truncate">
-              {user.email}
-            </span>
+            <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/50">
+              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-medium text-muted-foreground max-w-[160px] truncate">
+                {user.email}
+              </span>
+            </div>
           )}
 
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                className="relative h-10 w-10 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted hover:border-border transition-all duration-200"
+              >
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72">
-              <nav className="flex flex-col gap-1 mt-8">
+            <SheetContent side="right" className="w-80 border-l border-border/50 bg-background/95 backdrop-blur-xl p-0">
+              {/* Header del menú */}
+              <div className="p-6 border-b border-border/50 bg-gradient-to-br from-emerald-500/5 to-teal-500/5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+                    <FileText className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="font-bold text-lg">CotiFactura</h2>
+                    <p className="text-xs text-muted-foreground">Menú de navegación</p>
+                  </div>
+                </div>
+              </div>
 
+              <nav className="flex flex-col gap-1 p-4">
                 {/* Links principales */}
                 {NAV_LINKS.map(({ href, label, icon: Icon }) => (
                   <Button
                     key={href}
                     variant="ghost"
-                    className="justify-start gap-3"
+                    className="group justify-between h-12 px-4 rounded-xl hover:bg-emerald-500/10 hover:text-blue-600transition-all duration-200"
                     asChild
                   >
                     <Link href={href}>
-                      <Icon className="h-4 w-4" />
-                      {label}
+                      <span className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 group-hover:bg-emerald-500/20 transition-colors">
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <span className="font-medium">{label}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-50 group-hover:translate-x-0 transition-all" />
                     </Link>
                   </Button>
                 ))}
@@ -84,30 +112,46 @@ export function Header({ onSettingsClick }: HeaderProps) {
                 {onSettingsClick && (
                   <Button
                     variant="ghost"
-                    className="justify-start gap-3"
+                    className="group justify-between h-12 px-4 rounded-xl hover:bg-emerald-500/10 hover:text-blue-600 transition-all duration-200"
                     onClick={onSettingsClick}
                   >
-                    <Settings className="h-4 w-4" />
-                    Configuración
+                    <span className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 group-hover:bg-blue-500/20 transition-colors">
+                        <Settings className="h-4 w-4" />
+                      </div>
+                      <span className="font-medium">Configuración</span>
+                    </span>
+                    <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-50 group-hover:translate-x-0 transition-all" />
                   </Button>
                 )}
 
                 {/* Separador + usuario + cerrar sesión */}
                 {user && (
                   <>
-                    <div className="border-t my-3" />
-                    <div className="px-3 py-1 mb-1">
-                      <p className="text-xs font-medium text-muted-foreground truncate">
-                        {user.email}
-                      </p>
+                    <div className="my-4 mx-2 border-t border-border/50" />
+                    
+                    {/* Card de usuario */}
+                    <div className="mx-2 p-4 rounded-xl bg-muted/30 border border-border/50 mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-teal-600 text-white font-semibold text-sm">
+                          {user.email?.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-muted-foreground">Conectado como</p>
+                          <p className="text-sm font-semibold truncate">{user.email}</p>
+                        </div>
+                      </div>
                     </div>
+
                     <Button
                       variant="ghost"
-                      className="justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      className="justify-start gap-3 h-12 px-4 rounded-xl text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-all duration-200"
                       onClick={handleSignOut}
                     >
-                      <LogOut className="h-4 w-4" />
-                      Cerrar sesión
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10">
+                        <LogOut className="h-4 w-4" />
+                      </div>
+                      <span className="font-medium">Cerrar sesión</span>
                     </Button>
                   </>
                 )}
