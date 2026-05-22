@@ -26,6 +26,15 @@ export function usePdfGenerator() {
         useCORS: true,
         backgroundColor: '#ffffff',
         logging: false,
+        onclone: (clonedDoc) => {
+          // Elimina las variables oklch del root clonado
+          const root = clonedDoc.documentElement
+          root.style.cssText = ''
+          // O más específico:
+          const style = clonedDoc.createElement('style')
+          style.textContent = `:root { color-scheme: light; }`
+          clonedDoc.head.appendChild(style)
+        }
       })
 
       const imgData = canvas.toDataURL('image/jpeg', 1.0)
