@@ -13,7 +13,7 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
       id="invoice-preview"
       style={{ 
         backgroundColor: '#ffffff',
-        color: '#111827',
+        color: '#000000',
         padding: '32px',
         maxWidth: '800px',
         margin: '0 auto',
@@ -43,10 +43,10 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
       </div>
 
       {/* DEBE A Section */}
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ marginBottom: '32px', textAlign: 'center' }}>
         <p style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '8px' }}>DEBE A</p>
         <p style={{ fontWeight: '600' }}>{invoice.provider.name}</p>
-        <p>CEDULA DE CIUDADANIA: {invoice.provider.documentNumber}</p>
+        <p style={{fontWeight: 'bold'}}>CEDULA DE CIUDADANIA: {invoice.provider.documentNumber}</p>
       </div>
 
       {/* Amount */}
