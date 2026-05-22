@@ -1,0 +1,3 @@
+allowBuilds:
+  core: true
+  sharp: true
