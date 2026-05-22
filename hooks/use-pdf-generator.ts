@@ -11,8 +11,8 @@ export function usePdfGenerator() {
     try {
       await new Promise((resolve) => setTimeout(resolve, 200))
 
-      const html2canvasModule = await import('html2canvas')
-      const html2canvas = html2canvasModule.default
+      // html-to-image soporta oklch() y CSS moderno, a diferencia de html2canvas
+      const { toJpeg } = await import('html-to-image')
       const { default: jsPDF } = await import('jspdf')
 
       const element = document.getElementById(elementId)
@@ -21,23 +21,12 @@ export function usePdfGenerator() {
         throw new Error(`Element with id "${elementId}" not found`)
       }
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
+      const imgData = await toJpeg(element, {
+        quality: 1.0,
         backgroundColor: '#ffffff',
-        logging: false,
-        onclone: (clonedDoc) => {
-          // Elimina las variables oklch del root clonado
-          const root = clonedDoc.documentElement
-          root.style.cssText = ''
-          // O más específico:
-          const style = clonedDoc.createElement('style')
-          style.textContent = `:root { color-scheme: light; }`
-          clonedDoc.head.appendChild(style)
-        }
+        // Captura el elemento a doble resolución para mayor nitidez
+        pixelRatio: 2,
       })
-
-      const imgData = canvas.toDataURL('image/jpeg', 1.0)
 
       // A4
       const pdfWidth = 210
@@ -49,7 +38,8 @@ export function usePdfGenerator() {
       const availableWidth = pdfWidth - margin * 2
       const availableHeight = pdfHeight - margin * 2
 
-      const canvasRatio = canvas.width / canvas.height
+      // Calculamos el ratio desde el elemento real del DOM
+      const canvasRatio = element.offsetWidth / element.offsetHeight
 
       let imgWidth = availableWidth
       let imgHeight = imgWidth / canvasRatio
