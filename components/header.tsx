@@ -1,6 +1,18 @@
 'use client'
 
-import { FileText, Settings, Menu, LogOut, Home, FileSpreadsheet, Receipt, TrendingUp, History, ChevronRight } from 'lucide-react'
+import {
+  FileText,
+  Settings,
+  Menu,
+  LogOut,
+  Home,
+  FileSpreadsheet,
+  Receipt,
+  TrendingUp,
+  History,
+  ChevronRight,
+  Wrench
+} from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Sheet,
@@ -20,6 +32,7 @@ const NAV_LINKS = [
   { href: '/quotation/new',  label: 'Nueva Cotización',   icon: FileSpreadsheet },
   { href: '/invoice/new',    label: 'Nueva Cuenta',       icon: Receipt },
   { href: '/expenses/new',   label: 'Gastos',             icon: TrendingUp },
+  { href: '/tools',   label: 'Herramientas',             icon: TrendingUp },
   { href: '/history',        label: 'Historial',          icon: History },
   { href: '/settings',       label: 'Configuración',      icon: Settings },
 ]
