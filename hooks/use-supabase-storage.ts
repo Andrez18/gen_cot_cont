@@ -3,6 +3,28 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 
+/* =========================
+   TIPOS
+========================= */
+
+export interface Tool {
+  id: string
+  user_id: string
+  nombre: string
+  precio_dia: number | null
+  dias_usados: number | null
+  precio_total: number | null
+  total_calculado: number
+  obra_id: string | null
+  obra_nombre: string | null
+  created_at: string
+  updated_at: string
+}
+
+/* =========================
+   QUOTATIONS
+========================= */
+
 export function useQuotations() {
   const [quotations, setQuotations] = useState<any[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
@@ -19,13 +41,13 @@ export function useQuotations() {
   }, [])
 
   const saveQuotation = useCallback(async (q: any) => {
-    const { data: { user } } = await supabase.auth.getUser()  
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: new Error('No autenticado') }
 
     const { data, error } = await supabase
       .from('quotations')
       .insert([{
-        user_id: user.id,  
+        user_id: user.id,
         number: q.number,
         date: q.date,
         city: q.city,
@@ -43,11 +65,16 @@ export function useQuotations() {
     if (!error && data) {
       setQuotations(prev => [data, ...prev])
     }
+
     return { data, error }
   }, [])
 
   return { quotations, saveQuotation, isLoaded }
 }
+
+/* =========================
+   INVOICES
+========================= */
 
 export function useInvoices() {
   const [invoices, setInvoices] = useState<any[]>([])
@@ -65,13 +92,13 @@ export function useInvoices() {
   }, [])
 
   const saveInvoice = useCallback(async (inv: any) => {
-    const { data: { user } } = await supabase.auth.getUser()  
+    const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: new Error('No autenticado') }
 
     const { data, error } = await supabase
       .from('invoices')
       .insert([{
-        user_id: user.id,  
+        user_id: user.id,
         number: inv.number,
         date: inv.date,
         city: inv.city,
@@ -88,11 +115,16 @@ export function useInvoices() {
     if (!error && data) {
       setInvoices(prev => [data, ...prev])
     }
+
     return { data, error }
   }, [])
 
   return { invoices, saveInvoice, isLoaded }
 }
+
+/* =========================
+   EXPENSE RECORDS
+========================= */
 
 export function useExpenseRecords() {
   const [records, setRecords] = useState<any[]>([])
@@ -130,6 +162,7 @@ export function useExpenseRecords() {
     if (!error && data) {
       setRecords(prev => [data, ...prev])
     }
+
     return { data, error }
   }, [])
 
@@ -142,6 +175,7 @@ export function useExpenseRecords() {
     if (!error) {
       setRecords(prev => prev.filter(r => r.id !== id))
     }
+
     return { error }
   }, [])
 
@@ -154,11 +188,16 @@ export function useExpenseRecords() {
     if (!error) {
       setRecords([])
     }
+
     return { error }
   }, [])
 
   return { records, addRecord, deleteRecord, clearRecords, isLoaded }
 }
+
+/* =========================
+   EXPENSE REPORTS
+========================= */
 
 export function useExpenseReports() {
   const [reports, setReports] = useState<any[]>([])
@@ -195,11 +234,16 @@ export function useExpenseReports() {
     if (!error && data) {
       setReports(prev => [data, ...prev])
     }
+
     return { data, error }
   }, [])
 
   return { reports, saveReport, isLoaded }
 }
+
+/* =========================
+   STORAGE – PHOTOS
+========================= */
 
 export function usePhotoUpload() {
   const [isUploading, setIsUploading] = useState(false)
@@ -211,7 +255,9 @@ export function usePhotoUpload() {
       if (!user) return null
 
       const ext = file.name.split('.').pop()
-      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(2)}.${ext}`
+      const fileName = `${user.id}/${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${ext}`
 
       const { error } = await supabase.storage
         .from('expense-photos')
@@ -233,13 +279,118 @@ export function usePhotoUpload() {
   }, [])
 
   const deletePhoto = useCallback(async (url: string) => {
-    // Extraer la ruta completa después del bucket, no solo el nombre
     const urlObj = new URL(url)
-    const pathParts = urlObj.pathname.split('/expense-photos/')
-    const filePath = pathParts[1]
+    const filePath = urlObj.pathname.split('/expense-photos/')[1]
     if (!filePath) return
     await supabase.storage.from('expense-photos').remove([filePath])
   }, [])
 
   return { uploadPhoto, deletePhoto, isUploading }
+}
+
+/* =========================
+   TOOLS
+========================= */
+
+export function useTools(obraName?: string | null) {
+  const [tools, setTools] = useState<Tool[]>([])
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    setIsLoaded(false)
+    const loadTools = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setIsLoaded(true)
+        return
+      }
+
+      let query = supabase
+        .from('tools')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (obraName) {
+        query = query.eq('obra_nombre', obraName)
+      }
+
+      const { data } = await query
+
+      if (data) setTools(data)
+      setIsLoaded(true)
+    }
+
+    loadTools()
+  }, [obraName])
+
+  const addTool = useCallback(async (tool: {
+    nombre: string
+    precio_dia: number | null
+    precio_total: number | null
+    dias_usados: number | null
+    obra_id?: string | null
+    obra_nombre?: string | null
+  }) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { data: null, error: new Error('No autenticado') }
+
+    const { data, error } = await supabase
+      .from('tools')
+      .insert([{ user_id: user.id, ...tool }])
+      .select()
+      .single()
+
+    if (!error && data) {
+      setTools(prev => [data, ...prev])
+    }
+
+    return { data, error }
+  }, [])
+
+  const updateTool = useCallback(async (
+    id: string,
+    updates: Partial<{
+      nombre: string
+      precio_dia: number | null
+      precio_total: number | null
+      dias_usados: number | null
+      obra_id: string | null
+      obra_nombre: string | null
+    }>
+  ) => {
+    const { data, error } = await supabase
+      .from('tools')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (!error && data) {
+      setTools(prev => prev.map(t => (t.id === id ? data : t)))
+    }
+
+    return { data, error }
+  }, [])
+
+  const deleteTool = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('tools')
+      .delete()
+      .eq('id', id)
+
+    if (!error) {
+      setTools(prev => prev.filter(t => t.id !== id))
+    }
+
+    return { error }
+  }, [])
+
+  return {
+    tools,
+    addTool,
+    updateTool,
+    deleteTool,
+    isLoaded,
+  }
 }
