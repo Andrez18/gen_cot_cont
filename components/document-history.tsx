@@ -53,40 +53,40 @@ function mapInvoice(i: any): Invoice {
 
 function RegistroRow({ r, onVerFoto }: { r: any; onVerFoto: (url: string) => void }) {
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '8px',
-      padding: '8px 12px', borderBottom: '1px solid #f3f4f6', fontSize: '13px',
-    }}>
-      <span style={{
-        width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
-        background: r.tipo === 'ingreso' ? '#10b981' : '#ef4444', display: 'inline-block',
-      }} />
-      <span style={{ flex: 1, color: '#111827', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-        {r.descripcion}
-      </span>
-      <span style={{ fontSize: '11px', color: '#9ca3af', minWidth: '70px', textAlign: 'right' }}>
-        {r.cat || '—'}
-      </span>
-      <span style={{ fontSize: '11px', color: '#9ca3af', minWidth: '65px', textAlign: 'right' }}>
-        {r.fecha}
-      </span>
-      {r.foto_url ? (
-        <button
-          onClick={() => onVerFoto(r.foto_url)}
-          title="Ver foto"
-          style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: '4px', padding: '3px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#6b7280', flexShrink: 0 }}
-        >
-          <Image size={12} /> foto
-        </button>
-      ) : (
-        <span style={{ width: '46px', flexShrink: 0 }} />
-      )}
-      <span style={{
-        fontWeight: 600, minWidth: '90px', textAlign: 'right', flexShrink: 0,
-        color: r.tipo === 'ingreso' ? '#065f46' : '#991b1b',
-      }}>
-        {r.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(r.monto)}
-      </span>
+    <div style={{ padding: '10px 12px', borderBottom: '1px solid #f3f4f6', fontSize: '13px' }}>
+      {/* Fila principal */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span style={{
+          width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
+          background: r.tipo === 'ingreso' ? '#10b981' : '#ef4444', display: 'inline-block',
+        }} />
+        <span style={{ flex: 1, color: '#111827', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {r.descripcion}
+        </span>
+        <span style={{
+          fontWeight: 600, flexShrink: 0,
+          color: r.tipo === 'ingreso' ? '#065f46' : '#991b1b',
+        }}>
+          {r.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(r.monto)}
+        </span>
+      </div>
+      {/* Fila secundaria: meta */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', paddingLeft: '15px' }}>
+        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{r.cat || '—'}</span>
+        <span style={{ fontSize: '11px', color: '#d1d5db' }}>·</span>
+        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{r.fecha}</span>
+        {r.foto_url && (
+          <>
+            <span style={{ fontSize: '11px', color: '#d1d5db' }}>·</span>
+            <button
+              onClick={() => onVerFoto(r.foto_url)}
+              style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#6b7280' }}
+            >
+              <Image size={11} /> foto
+            </button>
+          </>
+        )}
+      </div>
     </div>
   )
 }
@@ -148,9 +148,9 @@ function InformeCard({
                 { label: 'Gastos',   value: informe.gastos,   color: '#991b1b', bg: '#fef2f2' },
                 { label: 'Balance',  value: informe.balance,  color: informe.balance >= 0 ? '#065f46' : '#991b1b', bg: '#f9fafb' },
               ].map(c => (
-                <div key={c.label} style={{ background: c.bg, borderRadius: '6px', padding: '10px 12px' }}>
-                  <div style={{ fontSize: '11px', color: '#6b7280', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{c.label}</div>
-                  <div style={{ fontSize: '14px', fontWeight: 'bold', color: c.color }}>{formatCurrency(c.value)}</div>
+                <div key={c.label} style={{ background: c.bg, borderRadius: '6px', padding: '8px 10px' }}>
+                  <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{c.label}</div>
+                  <div style={{ fontSize: '12px', fontWeight: 'bold', color: c.color }}>{formatCurrency(c.value)}</div>
                 </div>
               ))}
             </div>
@@ -329,34 +329,32 @@ function HerramientasTab({
               <div key={obraKey} className="rounded-xl border border-border overflow-hidden">
                 {/* Header del grupo */}
                 <button
-                  className="w-full flex items-center justify-between px-5 py-3.5 bg-muted/40 hover:bg-muted/60 transition-colors"
+                  className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors text-left"
                   onClick={() => toggleGroup(obraKey)}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <Building2 size={14} className={sinObra ? 'text-muted-foreground/50' : 'text-muted-foreground'} />
-                    <span className={`text-sm font-semibold ${sinObra ? 'text-muted-foreground italic' : 'text-foreground'}`}>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <Building2 size={14} className={`shrink-0 ${sinObra ? 'text-muted-foreground/50' : 'text-muted-foreground'}`} />
+                    <span className={`text-sm font-semibold truncate ${sinObra ? 'text-muted-foreground italic' : 'text-foreground'}`}>
                       {obraKey}
                     </span>
-                    <span className="text-xs text-muted-foreground bg-background border border-border rounded-full px-2 py-0.5">
+                    <span className="text-xs text-muted-foreground bg-background border border-border rounded-full px-2 py-0.5 shrink-0 hidden sm:inline">
                       {obraTools.length} herramienta{obraTools.length !== 1 ? 's' : ''}
                     </span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 shrink-0 ml-2">
                     <span className="text-sm font-bold text-foreground">{formatCurrency(obraTotal)}</span>
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5 h-7 text-xs px-2.5"
-                        onClick={e => { e.stopPropagation(); onVerPdf(obraTools, obraTotal, sinObra ? undefined : obraKey) }}
-                      >
-                        <Eye size={12} />
-                        PDF
-                      </Button>
-                      {isCollapsed
-                        ? <ChevronDown size={15} className="text-muted-foreground" />
-                        : <ChevronUp size={15} className="text-muted-foreground" />}
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="gap-1 h-7 text-xs px-2"
+                      onClick={e => { e.stopPropagation(); onVerPdf(obraTools, obraTotal, sinObra ? undefined : obraKey) }}
+                    >
+                      <Eye size={12} />
+                      <span className="hidden sm:inline">PDF</span>
+                    </Button>
+                    {isCollapsed
+                      ? <ChevronDown size={15} className="text-muted-foreground" />
+                      : <ChevronUp size={15} className="text-muted-foreground" />}
                   </div>
                 </button>
 
@@ -364,7 +362,7 @@ function HerramientasTab({
                 {!isCollapsed && (
                   <div className="divide-y divide-border">
                     {obraTools.map(tool => (
-                      <div key={tool.id} className="flex items-center gap-4 px-5 py-3.5 bg-background hover:bg-muted/20 transition-colors">
+                      <div key={tool.id} className="flex items-center gap-3 px-4 py-3 bg-background hover:bg-muted/20 transition-colors">
                         <div className="size-7 rounded-md border border-border bg-secondary flex items-center justify-center shrink-0">
                           <Wrench size={13} className="text-muted-foreground" />
                         </div>
@@ -388,14 +386,6 @@ function HerramientasTab({
           })}
         </div>
       )}
-
-      {/* Total general */}
-      <div className="flex items-center justify-between px-5 py-4 rounded-xl border border-border bg-muted/40">
-        <span className="text-sm font-medium">Total general</span>
-        <span className="text-base font-bold">
-          {formatCurrency(tools.reduce((s, t) => s + (t.total_calculado ?? 0), 0))}
-        </span>
-      </div>
     </div>
   )
 }
@@ -472,17 +462,25 @@ export function DocumentHistory() {
     <div className="space-y-6">
       <Tabs defaultValue="quotations" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="quotations" className="gap-2">
-            <FileText className="h-4 w-4" />Cotizaciones ({quotations.length})
+          <TabsTrigger value="quotations" className="gap-1.5">
+            <FileText className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Cotizaciones ({quotations.length})</span>
+            <span className="sm:hidden text-xs">Cotiz.</span>
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="gap-2">
-            <Receipt className="h-4 w-4" />Cuentas ({invoices.length})
+          <TabsTrigger value="invoices" className="gap-1.5">
+            <Receipt className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Cuentas ({invoices.length})</span>
+            <span className="sm:hidden text-xs">Cuentas</span>
           </TabsTrigger>
-          <TabsTrigger value="gastos" className="gap-2">
-            <TrendingUp className="h-4 w-4" />Gastos
+          <TabsTrigger value="gastos" className="gap-1.5">
+            <TrendingUp className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Gastos</span>
+            <span className="sm:hidden text-xs">Gastos</span>
           </TabsTrigger>
-          <TabsTrigger value="herramientas" className="gap-2">
-            <Wrench className="h-4 w-4" />Herramientas
+          <TabsTrigger value="herramientas" className="gap-1.5">
+            <Wrench className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Herramientas</span>
+            <span className="sm:hidden text-xs">Tools</span>
           </TabsTrigger>
         </TabsList>
 
@@ -499,24 +497,24 @@ export function DocumentHistory() {
               <EmptyDescription>{searchTerm ? 'No se encontraron cotizaciones con ese criterio' : 'Aún no has creado ninguna cotización'}</EmptyDescription>
             </EmptyHeader></Empty>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {filteredQuotations.map(quotation => (
                 <Card key={quotation.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold">#{quotation.number}</span>
-                          <span className="text-sm text-muted-foreground">{formatShortDate(quotation.date)}</span>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-semibold text-sm">#{quotation.number}</span>
+                          <span className="text-xs text-muted-foreground">{formatShortDate(quotation.date)}</span>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">{quotation.client?.companyName}</p>
-                        <p className="text-lg font-bold text-primary mt-1">{formatCurrency(quotation.total)}</p>
+                        <p className="text-base font-bold text-primary mt-1">{formatCurrency(quotation.total)}</p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setSelectedQuotation(mapQuotation(quotation))}>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedQuotation(mapQuotation(quotation))}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteQuotation(quotation.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteQuotation(quotation.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -541,24 +539,24 @@ export function DocumentHistory() {
               <EmptyDescription>{searchTerm ? 'No se encontraron cuentas con ese criterio' : 'Aún no has creado ninguna cuenta de cobro'}</EmptyDescription>
             </EmptyHeader></Empty>
           ) : (
-            <div className="grid gap-4">
+            <div className="grid gap-3">
               {filteredInvoices.map(invoice => (
                 <Card key={invoice.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-semibold">#{invoice.number}</span>
-                          <span className="text-sm text-muted-foreground">{formatShortDate(invoice.date)}</span>
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-semibold text-sm">#{invoice.number}</span>
+                          <span className="text-xs text-muted-foreground">{formatShortDate(invoice.date)}</span>
                         </div>
                         <p className="text-sm text-muted-foreground truncate">{invoice.client?.companyName}</p>
-                        <p className="text-lg font-bold text-primary mt-1">{formatCurrency(invoice.amount)}</p>
+                        <p className="text-base font-bold text-primary mt-1">{formatCurrency(invoice.amount)}</p>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => setSelectedInvoice(mapInvoice(invoice))}>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedInvoice(mapInvoice(invoice))}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteInvoice(invoice.id)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteInvoice(invoice.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
