@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { FileText, Receipt, Trash2, Eye, Download, Search, TrendingUp, Clock, ChevronDown, ChevronUp, Image } from 'lucide-react'
+import { FileText, Receipt, Trash2, Eye, Download, Search, TrendingUp, Clock, ChevronDown, ChevronUp, Image, Wrench, Building2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -12,8 +12,9 @@ import { formatCurrency, formatShortDate } from '@/lib/document-utils'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 import { QuotationPreview } from './quotation-preview'
 import { InvoicePreview } from './invoice-preview'
+import { ToolsForm } from './tools-form'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
-import { useQuotations, useInvoices, useExpenseRecords, useExpenseReports } from '@/hooks/use-supabase-storage'
+import { useQuotations, useInvoices, useExpenseRecords, useExpenseReports, useTools } from '@/hooks/use-supabase-storage'
 import { supabase } from '@/lib/supabase'
 import { useNotification } from '@/hooks/use_notification'
 
@@ -265,6 +266,140 @@ function GastosTab({ onVerFoto }: { onVerFoto: (url: string) => void }) {
   )
 }
 
+function HerramientasTab({
+  onVerPdf,
+}: {
+  onVerPdf: (tools: any[], total: number, obraName?: string) => void
+}) {
+  const { tools, isLoaded } = useTools()
+  const [searchTerm, setSearchTerm] = useState('')
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
+
+  if (!isLoaded) {
+    return <div className="py-8 text-center text-muted-foreground text-sm animate-pulse">Cargando...</div>
+  }
+
+  if (tools.length === 0) {
+    return (
+      <Empty>
+        <EmptyHeader>
+          <EmptyMedia variant="icon"><Wrench className="h-6 w-6" /></EmptyMedia>
+          <EmptyTitle>Sin herramientas</EmptyTitle>
+          <EmptyDescription>Aún no has registrado herramientas en ninguna obra</EmptyDescription>
+        </EmptyHeader>
+      </Empty>
+    )
+  }
+
+  // Agrupar por obra_nombre (null → "Sin obra")
+  const grupos = tools
+    .filter(t => !searchTerm || t.nombre?.toLowerCase().includes(searchTerm.toLowerCase()))
+    .reduce<Record<string, any[]>>((acc, t) => {
+      const key = t.obra_nombre?.trim() || 'Sin obra'
+      if (!acc[key]) acc[key] = []
+      acc[key].push(t)
+      return acc
+    }, {})
+
+  const toggleGroup = (key: string) =>
+    setCollapsed(prev => ({ ...prev, [key]: !prev[key] }))
+
+  return (
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Buscar herramienta..."
+          value={searchTerm}
+          onChange={e => setSearchTerm(e.target.value)}
+          className="pl-10"
+        />
+      </div>
+
+      {Object.keys(grupos).length === 0 ? (
+        <p className="text-sm text-center text-muted-foreground py-6">No se encontraron herramientas con ese criterio</p>
+      ) : (
+        <div className="space-y-3">
+          {Object.entries(grupos).map(([obraKey, obraTools]) => {
+            const obraTotal = obraTools.reduce((s, t) => s + (t.total_calculado ?? 0), 0)
+            const isCollapsed = collapsed[obraKey] ?? false
+            const sinObra = obraKey === 'Sin obra'
+
+            return (
+              <div key={obraKey} className="rounded-xl border border-border overflow-hidden">
+                {/* Header del grupo */}
+                <button
+                  className="w-full flex items-center justify-between px-5 py-3.5 bg-muted/40 hover:bg-muted/60 transition-colors"
+                  onClick={() => toggleGroup(obraKey)}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Building2 size={14} className={sinObra ? 'text-muted-foreground/50' : 'text-muted-foreground'} />
+                    <span className={`text-sm font-semibold ${sinObra ? 'text-muted-foreground italic' : 'text-foreground'}`}>
+                      {obraKey}
+                    </span>
+                    <span className="text-xs text-muted-foreground bg-background border border-border rounded-full px-2 py-0.5">
+                      {obraTools.length} herramienta{obraTools.length !== 1 ? 's' : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-foreground">{formatCurrency(obraTotal)}</span>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 h-7 text-xs px-2.5"
+                        onClick={e => { e.stopPropagation(); onVerPdf(obraTools, obraTotal, sinObra ? undefined : obraKey) }}
+                      >
+                        <Eye size={12} />
+                        PDF
+                      </Button>
+                      {isCollapsed
+                        ? <ChevronDown size={15} className="text-muted-foreground" />
+                        : <ChevronUp size={15} className="text-muted-foreground" />}
+                    </div>
+                  </div>
+                </button>
+
+                {/* Filas de herramientas */}
+                {!isCollapsed && (
+                  <div className="divide-y divide-border">
+                    {obraTools.map(tool => (
+                      <div key={tool.id} className="flex items-center gap-4 px-5 py-3.5 bg-background hover:bg-muted/20 transition-colors">
+                        <div className="size-7 rounded-md border border-border bg-secondary flex items-center justify-center shrink-0">
+                          <Wrench size={13} className="text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{tool.nombre}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {tool.precio_dia != null
+                              ? `${formatCurrency(tool.precio_dia)}/día × ${tool.dias_usados ?? 0} días`
+                              : 'Precio fijo'}
+                          </p>
+                        </div>
+                        <p className="text-sm font-semibold text-foreground shrink-0">
+                          {formatCurrency(tool.total_calculado ?? 0)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Total general */}
+      <div className="flex items-center justify-between px-5 py-4 rounded-xl border border-border bg-muted/40">
+        <span className="text-sm font-medium">Total general</span>
+        <span className="text-base font-bold">
+          {formatCurrency(tools.reduce((s, t) => s + (t.total_calculado ?? 0), 0))}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function DocumentHistory() {
   const { quotations, isLoaded: quotationsLoaded } = useQuotations()
   const { invoices, isLoaded: invoicesLoaded } = useInvoices()
@@ -275,6 +410,7 @@ export function DocumentHistory() {
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
+  const [toolsPdfData, setToolsPdfData] = useState<{ tools: any[]; total: number } | null>(null)
 
   const filteredQuotations = quotations.filter(q =>
     q.client?.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -319,6 +455,11 @@ export function DocumentHistory() {
     catch { alert('Error al generar el PDF') }
   }
 
+  const handleDownloadToolsPdf = async () => {
+    try { await generatePdf('tools-pdf-dialog-preview', 'herramientas') }
+    catch { alert('Error al generar el PDF') }
+  }
+
   if (!quotationsLoaded || !invoicesLoaded) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -330,7 +471,7 @@ export function DocumentHistory() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="quotations" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="quotations" className="gap-2">
             <FileText className="h-4 w-4" />Cotizaciones ({quotations.length})
           </TabsTrigger>
@@ -339,6 +480,9 @@ export function DocumentHistory() {
           </TabsTrigger>
           <TabsTrigger value="gastos" className="gap-2">
             <TrendingUp className="h-4 w-4" />Gastos
+          </TabsTrigger>
+          <TabsTrigger value="herramientas" className="gap-2">
+            <Wrench className="h-4 w-4" />Herramientas
           </TabsTrigger>
         </TabsList>
 
@@ -430,6 +574,13 @@ export function DocumentHistory() {
         <TabsContent value="gastos" className="mt-6">
           <GastosTab onVerFoto={setFotoUrl} />
         </TabsContent>
+
+        {/* Herramientas */}
+        <TabsContent value="herramientas" className="mt-4">
+          <HerramientasTab
+            onVerPdf={(tools, total) => setToolsPdfData({ tools, total })}
+          />
+        </TabsContent>
       </Tabs>
 
       {/* Dialog cotización */}
@@ -484,6 +635,79 @@ export function DocumentHistory() {
                 >
                   Abrir en nueva pestaña
                 </a>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog vista previa herramientas PDF */}
+      <Dialog open={!!toolsPdfData} onOpenChange={() => setToolsPdfData(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Vista previa — Herramientas</span>
+              <Button size="sm" onClick={handleDownloadToolsPdf} disabled={isGenerating}>
+                <Download className="h-4 w-4 mr-2" />{isGenerating ? 'Generando...' : 'Descargar PDF'}
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+          {toolsPdfData && (
+            <div
+              id="tools-pdf-dialog-preview"
+              style={{
+                width: '100%',
+                background: '#fff',
+                padding: '40px 48px',
+                fontFamily: 'Arial, sans-serif',
+                color: '#111',
+                borderRadius: '8px',
+              }}
+            >
+              {/* Header PDF */}
+              <div style={{ borderBottom: '2px solid #111', paddingBottom: 16, marginBottom: 28 }}>
+                <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Lista de Herramientas</h1>
+                <p style={{ fontSize: 13, color: '#555', margin: '6px 0 0' }}>
+                  {new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              </div>
+
+              {/* Encabezado tabla */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 130px', gap: 0, borderBottom: '1px solid #ddd', paddingBottom: 8, marginBottom: 4 }}>
+                {['Herramienta', 'Precio / día', 'Días', 'Total'].map(h => (
+                  <span key={h} style={{ fontSize: 11, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
+                ))}
+              </div>
+
+              {/* Filas */}
+              {toolsPdfData.tools.map((tool, i) => (
+                <div
+                  key={tool.id ?? i}
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 160px 90px 130px',
+                    padding: '10px 0',
+                    borderBottom: '1px solid #f0f0f0',
+                    background: i % 2 === 0 ? '#fff' : '#fafafa',
+                  }}
+                >
+                  <span style={{ fontSize: 13 }}>{tool.nombre}</span>
+                  <span style={{ fontSize: 13 }}>
+                    {tool.precio_dia != null ? formatCurrency(tool.precio_dia) : '—'}
+                  </span>
+                  <span style={{ fontSize: 13 }}>
+                    {tool.dias_usados != null ? tool.dias_usados : tool.precio_total != null ? 'Fijo' : '—'}
+                  </span>
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>{formatCurrency(tool.total_calculado ?? 0)}</span>
+                </div>
+              ))}
+
+              {/* Total */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20, paddingTop: 16, borderTop: '2px solid #111' }}>
+                <div style={{ textAlign: 'right' }}>
+                  <span style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>TOTAL HERRAMIENTAS</span>
+                  <span style={{ fontSize: 20, fontWeight: 700 }}>{formatCurrency(toolsPdfData.total)}</span>
+                </div>
               </div>
             </div>
           )}
