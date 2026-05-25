@@ -400,7 +400,7 @@ export function DocumentHistory() {
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
-  const [toolsPdfData, setToolsPdfData] = useState<{ tools: any[]; total: number } | null>(null)
+  const [toolsPdfData, setToolsPdfData] = useState<{ tools: any[]; total: number; obraName?: string } | null>(null)
 
   const filteredQuotations = quotations.filter(q =>
     q.client?.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -576,7 +576,7 @@ export function DocumentHistory() {
         {/* Herramientas */}
         <TabsContent value="herramientas" className="mt-4">
           <HerramientasTab
-            onVerPdf={(tools, total) => setToolsPdfData({ tools, total })}
+            onVerPdf={(tools, total, obraName) => setToolsPdfData({ tools, total, obraName })}
           />
         </TabsContent>
       </Tabs>
@@ -641,74 +641,112 @@ export function DocumentHistory() {
 
       {/* Dialog vista previa herramientas PDF */}
       <Dialog open={!!toolsPdfData} onOpenChange={() => setToolsPdfData(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              <span>Vista previa — Herramientas</span>
-              <Button size="sm" onClick={handleDownloadToolsPdf} disabled={isGenerating}>
-                <Download className="h-4 w-4 mr-2" />{isGenerating ? 'Generando...' : 'Descargar PDF'}
-              </Button>
-            </DialogTitle>
-          </DialogHeader>
-          {toolsPdfData && (
-            <div
-              id="tools-pdf-dialog-preview"
-              style={{
-                width: '100%',
-                background: '#fff',
-                padding: '40px 48px',
-                fontFamily: 'Arial, sans-serif',
-                color: '#111',
-                borderRadius: '8px',
-              }}
-            >
-              {/* Header PDF */}
-              <div style={{ borderBottom: '2px solid #111', paddingBottom: 16, marginBottom: 28 }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Lista de Herramientas</h1>
-                <p style={{ fontSize: 13, color: '#555', margin: '6px 0 0' }}>
-                  {new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
-                </p>
+        <DialogContent className="w-full max-w-2xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
+          {/* Header del dialog */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="size-9 rounded-lg bg-secondary border border-border flex items-center justify-center shrink-0">
+                <Wrench size={16} className="text-muted-foreground" />
               </div>
-
-              {/* Encabezado tabla */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 90px 130px', gap: 0, borderBottom: '1px solid #ddd', paddingBottom: 8, marginBottom: 4 }}>
-                {['Herramienta', 'Precio / día', 'Días', 'Total'].map(h => (
-                  <span key={h} style={{ fontSize: 11, fontWeight: 700, color: '#555', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
-                ))}
-              </div>
-
-              {/* Filas */}
-              {toolsPdfData.tools.map((tool, i) => (
-                <div
-                  key={tool.id ?? i}
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 160px 90px 130px',
-                    padding: '10px 0',
-                    borderBottom: '1px solid #f0f0f0',
-                    background: i % 2 === 0 ? '#fff' : '#fafafa',
-                  }}
-                >
-                  <span style={{ fontSize: 13 }}>{tool.nombre}</span>
-                  <span style={{ fontSize: 13 }}>
-                    {tool.precio_dia != null ? formatCurrency(tool.precio_dia) : '—'}
-                  </span>
-                  <span style={{ fontSize: 13 }}>
-                    {tool.dias_usados != null ? tool.dias_usados : tool.precio_total != null ? 'Fijo' : '—'}
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>{formatCurrency(tool.total_calculado ?? 0)}</span>
-                </div>
-              ))}
-
-              {/* Total */}
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 20, paddingTop: 16, borderTop: '2px solid #111' }}>
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>TOTAL HERRAMIENTAS</span>
-                  <span style={{ fontSize: 20, fontWeight: 700 }}>{formatCurrency(toolsPdfData.total)}</span>
-                </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold leading-tight truncate">Vista previa — Herramientas</h2>
+                {toolsPdfData?.obraName && (
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <Building2 size={11} className="text-muted-foreground shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate">{toolsPdfData.obraName}</span>
+                  </div>
+                )}
               </div>
             </div>
-          )}
+            <Button size="sm" className="gap-2 shrink-0 ml-3" onClick={handleDownloadToolsPdf} disabled={isGenerating}>
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{isGenerating ? 'Generando...' : 'Descargar PDF'}</span>
+              <span className="sm:hidden">{isGenerating ? '...' : 'PDF'}</span>
+            </Button>
+          </div>
+
+          {/* Contenido scrollable */}
+          <div className="overflow-y-auto flex-1 p-4 sm:p-6">
+            {toolsPdfData && (
+              <div
+                id="tools-pdf-dialog-preview"
+                style={{
+                  background: '#fff',
+                  padding: '36px 40px',
+                  fontFamily: 'Arial, sans-serif',
+                  color: '#111',
+                  borderRadius: '10px',
+                  border: '1px solid #e5e7eb',
+                  boxShadow: '0 2px 12px rgba(0,0,0,0.06)',
+                }}
+              >
+                {/* Header PDF */}
+                <div style={{ marginBottom: 28 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                    <div>
+                      <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#111' }}>
+                        Lista de Herramientas
+                      </h1>
+                      {toolsPdfData.obraName && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6 }}>
+                          <div style={{ width: 3, height: 16, background: '#111', borderRadius: 2 }} />
+                          <span style={{ fontSize: 14, fontWeight: 600, color: '#333' }}>{toolsPdfData.obraName}</span>
+                        </div>
+                      )}
+                      <p style={{ fontSize: 12, color: '#888', margin: '6px 0 0' }}>
+                        {new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 11, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 2 }}>Total</div>
+                      <div style={{ fontSize: 22, fontWeight: 800, color: '#111' }}>{formatCurrency(toolsPdfData.total)}</div>
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{toolsPdfData.tools.length} herramienta{toolsPdfData.tools.length !== 1 ? 's' : ''}</div>
+                    </div>
+                  </div>
+                  <div style={{ height: 2, background: '#111', borderRadius: 1, marginTop: 18 }} />
+                </div>
+
+                {/* Encabezado tabla */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 60px 110px', gap: 0, paddingBottom: 8, marginBottom: 2 }}>
+                  {['Herramienta', 'Precio / día', 'Días', 'Total'].map(h => (
+                    <span key={h} style={{ fontSize: 10, fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
+                  ))}
+                </div>
+
+                {/* Filas */}
+                {toolsPdfData.tools.map((tool, i) => (
+                  <div
+                    key={tool.id ?? i}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 130px 60px 110px',
+                      padding: '10px 10px',
+                      borderRadius: 6,
+                      background: i % 2 === 0 ? '#f9fafb' : '#fff',
+                      marginBottom: 2,
+                    }}
+                  >
+                    <span style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{tool.nombre}</span>
+                    <span style={{ fontSize: 12, color: '#555' }}>
+                      {tool.precio_dia != null ? formatCurrency(tool.precio_dia) : '—'}
+                    </span>
+                    <span style={{ fontSize: 12, color: '#555' }}>
+                      {tool.dias_usados != null ? tool.dias_usados : tool.precio_total != null ? 'Fijo' : '—'}
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#111' }}>{formatCurrency(tool.total_calculado ?? 0)}</span>
+                  </div>
+                ))}
+
+                {/* Total footer */}
+                <div style={{ marginTop: 16, paddingTop: 14, borderTop: '2px solid #111', display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: 10, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Total herramientas</div>
+                    <div style={{ fontSize: 20, fontWeight: 800, color: '#111' }}>{formatCurrency(toolsPdfData.total)}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>
