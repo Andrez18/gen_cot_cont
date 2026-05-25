@@ -44,8 +44,8 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
 
       {/* DEBE A Section */}
       <div style={{ marginBottom: '32px', textAlign: 'center' }}>
-        <p style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '7px' }}>DEBE A</p>
-        <p style={{ fontWeight: '600' }}>{invoice.provider.name}</p>
+        <p style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '5px' }}>DEBE A</p>
+        <p style={{ fontWeight: '600'}}>{invoice.provider.name}</p>
         <p style={{fontWeight: 'bold'}}>CEDULA DE CIUDADANIA: {invoice.provider.documentNumber}</p>
       </div>
 
@@ -53,9 +53,7 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
       <div style={{ 
         marginBottom: '24px', 
         paddingTop: '16px', 
-        paddingBottom: '16px', 
-        borderTop: '1px solid #d1d5db', 
-        borderBottom: '1px solid #d1d5db' 
+        paddingBottom: '16px'
       }}>
         <p style={{ fontSize: '18px' }}>
           <span style={{ fontWeight: 'bold' }}>La suma de: </span>
