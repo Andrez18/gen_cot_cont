@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { NotificationProvider } from '@/hooks/use_notification'
 import { AuthGuard } from '@/components/auth-guard'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const geist = Geist({
@@ -53,18 +54,20 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${geist.variable} ${geistMono.variable} bg-background`}>
+    <html lang="es" className={`${geist.variable} ${geistMono.variable} bg-background`} suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="font-sans antialiased min-h-screen">
-        <NotificationProvider>
-          <AuthGuard>
-            {children}
-            {process.env.NODE_ENV === 'production' && <Analytics />}
-          </AuthGuard>
-        </NotificationProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          <NotificationProvider>
+            <AuthGuard>
+              {children}
+              {process.env.NODE_ENV === 'production' && <Analytics />}
+            </AuthGuard>
+          </NotificationProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

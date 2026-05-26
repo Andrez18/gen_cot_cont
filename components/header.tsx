@@ -11,7 +11,9 @@ import {
   TrendingUp,
   History,
   ChevronRight,
-  Wrench
+  Wrench,
+  Sun,
+  Moon,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -22,6 +24,7 @@ import {
 import Link from 'next/link'
 import { useAuth } from '@/hooks/use-auth'
 import { useNotification } from '@/hooks/use_notification'
+import { useTheme } from 'next-themes'
 
 interface HeaderProps {
   onSettingsClick?: () => void
@@ -40,11 +43,14 @@ const NAV_LINKS = [
 export function Header({ onSettingsClick }: HeaderProps) {
   const { user, signOut } = useAuth()
   const { success } = useNotification()
+  const { theme, setTheme } = useTheme()
 
   const handleSignOut = async () => {
     await signOut()
     success('Sesión cerrada', user?.email ?? '')
   }
+
+  const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -76,6 +82,17 @@ export function Header({ onSettingsClick }: HeaderProps) {
               </span>
             </div>
           )}
+
+          <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="relative h-10 w-10 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted hover:border-border transition-all duration-200"
+              aria-label="Cambiar tema"
+            >
+              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            </Button>
 
           <Sheet>
             <SheetTrigger asChild>
