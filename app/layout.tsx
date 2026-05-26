@@ -60,7 +60,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="font-sans antialiased min-h-screen">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <NotificationProvider>
             <AuthGuard>
               {children}
