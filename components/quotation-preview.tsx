@@ -29,53 +29,50 @@ export function QuotationPreview({ quotation }: QuotationPreviewProps) {
       {/* Title & Client */}
       <div style={{ marginBottom: '24px', textAlign: 'center' }}>
         <h1 style={{ fontSize: '20px', fontWeight: 'bold', marginBottom: '8px' }}>
-          Cotizacion #{quotation.number}
+          Cotización #{quotation.number}
         </h1>
-        <p style={{ fontWeight: '600' }}>{quotation.client.companyName}</p>
         <p>NIT: {quotation.client.nit}</p>
-        {quotation.client.location && <p>{quotation.client.location}</p>}
+        {quotation.client.location && (
+          <p style={{ fontSize: '18px', fontWeight: 'bold', marginTop: '4px' }}>
+            {quotation.client.location}
+          </p>
+        )}
       </div>
 
       {/* Introduction */}
-      <p style={{ marginBottom: '24px' }}>
-        La presente cotizacion describe los aspectos principales que intervienen en:
+      <p style={{ marginBottom: '16px' }}>
+        La presente cotización describe los aspectos principales que intervienen en:
       </p>
 
       {/* Items List */}
-      <div style={{ marginBottom: '24px' }}>
+      <ul style={{ marginBottom: '24px', paddingLeft: '0', listStyle: 'none' }}>
         {quotation.items.map((item) => (
-          <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <li key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
             <span style={{ flex: 1 }}>
               - {item.quantity}{item.unit} {item.description} a {formatCurrency(item.unitPrice)}
             </span>
-            <span style={{ fontWeight: '500', marginLeft: '16px' }}>
+            <span style={{ fontWeight: 'bold', marginLeft: '24px', whiteSpace: 'nowrap' }}>
               Total = {formatCurrency(item.total)}
             </span>
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
 
       {/* Total */}
-      <div style={{ 
-        marginBottom: '24px', 
-        paddingTop: '12px', 
-        paddingBottom: '12px', 
-        borderTop: '1px solid #d1d5db', 
-        borderBottom: '1px solid #d1d5db' 
-      }}>
+      <div style={{ marginBottom: '24px' }}>
         <p style={{ fontWeight: 'bold' }}>
-          Total obra: {formatCurrency(quotation.total)} ({numberToWords(quotation.total).toLowerCase()})
+          Total obra: {formatCurrency(quotation.total)} ({numberToWords(quotation.total)})
         </p>
       </div>
 
       {/* Bank Info */}
-      <div style={{ marginBottom: '24px' }}>
-        <p style={{ marginBottom: '8px' }}>Para que sea pagada a la cuenta bancaria que se indica a continuacion:</p>
-        <div style={{ paddingLeft: '16px' }}>
-          <p><strong>Entidad:</strong> {quotation.bankInfo.entity}</p>
-          <p><strong>Tipo de cuenta:</strong> {quotation.bankInfo.accountType}</p>
-          <p><strong>Numero:</strong> {quotation.bankInfo.accountNumber}</p>
-          <p><strong>Nombre:</strong> {quotation.bankInfo.accountHolder}</p>
+      <div style={{ marginBottom: '24px', paddingTop: '16px', borderTop: '1px solid #d1d5db' }}>
+        <p style={{ marginBottom: '12px' }}>Para que sea pagada a la cuenta bancaria que se indica a continuación:</p>
+        <div>
+          <p style={{ marginBottom: '4px' }}><strong>Entidad:</strong> {quotation.bankInfo.entity}</p>
+          <p style={{ marginBottom: '4px' }}><strong>Tipo de cuenta:</strong> {quotation.bankInfo.accountType}</p>
+          <p style={{ marginBottom: '4px' }}><strong>Numero:</strong> {quotation.bankInfo.accountNumber}</p>
+          <p style={{ marginBottom: '4px' }}><strong>Nombre:</strong> {quotation.bankInfo.accountHolder}</p>
         </div>
       </div>
 
