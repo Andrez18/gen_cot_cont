@@ -44,15 +44,14 @@ export function usePdfGenerator() {
       let imgWidth = availableWidth
       let imgHeight = imgWidth / canvasRatio
 
-      // Ajustar altura para que SIEMPRE quede en una sola hoja
       if (imgHeight > availableHeight) {
         imgHeight = availableHeight
         imgWidth = imgHeight * canvasRatio
       }
 
-      // Centrado
-      const x = (pdfWidth - imgWidth) / 2
-      const y = (pdfHeight - imgHeight) / 2
+      // Alineado arriba-izquierda con margen
+      const x = margin
+      const y = margin
 
       const pdf = new jsPDF({
         orientation: 'p',
@@ -60,16 +59,7 @@ export function usePdfGenerator() {
         format: 'a4',
       })
 
-      pdf.addImage(
-        imgData,
-        'JPEG',
-        x,
-        y,
-        imgWidth,
-        imgHeight
-      )
-
-      pdf.save(`${filename}.pdf`)
+      pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight)
 
       return true
     } catch (error) {
