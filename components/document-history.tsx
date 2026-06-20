@@ -407,7 +407,7 @@ export function DocumentHistory() {
   const { quotations, isLoaded: quotationsLoaded } = useQuotations()
   const { invoices, isLoaded: invoicesLoaded } = useInvoices()
   const { generatePdf, isGenerating } = usePdfGenerator()
-  const { generateExpensePdf, isGenerating: isGeneratingInforme } = useExpensePdfGenerator()
+  const { generateExpensePdf, isGenerating: isGeneratingInforme, imageProgress } = useExpensePdfGenerator()
   const { success, error: notifError, warning } = useNotification()
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -651,8 +651,9 @@ export function DocumentHistory() {
             <div style={{ textAlign: 'center' }}>
               <img
                 src={fotoUrl}
+                crossOrigin='anonymous'
                 alt="Recibo"
-                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: '8px' }}
+                style={{ height: '32px', width: '32px', objectFit: 'cover', borderRadius: '4px' }}
               />
               <div style={{ marginTop: '12px' }}>
                 <a
@@ -800,8 +801,14 @@ export function DocumentHistory() {
             </div>
             <Button size="sm" className="gap-2 shrink-0 ml-3" onClick={handleDownloadInformePdf} disabled={isGeneratingInforme}>
               <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">{isGeneratingInforme ? 'Generando...' : 'Descargar PDF'}</span>
-              <span className="sm:hidden">{isGeneratingInforme ? '...' : 'PDF'}</span>
+              <span className="hidden sm:inline">
+                {imageProgress
+                  ? `Cargando fotos (${imageProgress.loaded}/${imageProgress.total})...`
+                  : isGeneratingInforme ? 'Generando...' : 'Descargar PDF'}
+              </span>
+              <span className="sm:hidden">
+                {imageProgress ? `${imageProgress.loaded}/${imageProgress.total}` : isGeneratingInforme ? '...' : 'PDF'}
+              </span>
             </Button>
           </div>
 
