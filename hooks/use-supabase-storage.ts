@@ -268,19 +268,28 @@ export function usePhotoUpload() {
         return null
       }
 
-      const { data } = supabase.storage
-        .from('expense-photos')
-        .getPublicUrl(fileName)
-
-      return data.publicUrl
+      // Guardar el path relativo dentro del bucket (ej: "userId/timestamp.jpg")
+      // En lugar de una URL pública que no funciona si el bucket es privado.
+      // El path se convierte a signed URL en el momento de mostrarlo/descargarlo.
+      return `supabase-storage://expense-photos/${fileName}`
     } finally {
       setIsUploading(false)
     }
   }, [])
 
   const deletePhoto = useCallback(async (url: string) => {
-    const urlObj = new URL(url)
-    const filePath = urlObj.pathname.split('/expense-photos/')[1]
+    // Soportar tanto el formato nuevo (supabase-storage://) como el antiguo (https://)
+    let filePath: string | undefined
+    if (url.startsWith('supabase-storage://expense-photos/')) {
+      filePath = url.replace('supabase-storage://expense-photos/', '')
+    } else {
+      try {
+        const urlObj = new URL(url)
+        filePath = urlObj.pathname.split('/expense-photos/')[1]
+      } catch {
+        return
+      }
+    }
     if (!filePath) return
     await supabase.storage.from('expense-photos').remove([filePath])
   }, [])
