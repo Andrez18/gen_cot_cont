@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Quotation, Invoice } from '@/lib/types'
 import { formatCurrency, formatShortDate } from '@/lib/document-utils'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
+import { useExpensePdfGenerator } from '@/hooks/use-expense-pdf-generator'
 import { QuotationPreview } from './quotation-preview'
 import { InvoicePreview } from './invoice-preview'
 import { ToolsForm } from './tools-form'
@@ -92,13 +93,14 @@ function RegistroRow({ r, onVerFoto }: { r: any; onVerFoto: (url: string) => voi
 }
 
 function InformeCard({
-  informe, registros, index, enProgreso, onVerFoto,
+  informe, registros, index, enProgreso, onVerFoto, onVerPdf,
 }: {
   informe: any
   registros?: any[]
   index: number
   enProgreso?: boolean
   onVerFoto: (url: string) => void
+  onVerPdf: (informe: any, registros: any[], index: number, enProgreso?: boolean) => void
 }) {
   const [expanded, setExpanded] = useState(enProgreso ?? false)
   const [verRegistros, setVerRegistros] = useState(false)
@@ -131,10 +133,19 @@ function InformeCard({
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <span className="text-sm font-bold" style={{ color: informe.balance >= 0 ? '#065f46' : '#991b1b' }}>
               {formatCurrency(informe.balance)}
             </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1 h-7 text-xs px-2"
+              onClick={e => { e.stopPropagation(); onVerPdf(informe, registros ?? [], index, enProgreso) }}
+            >
+              <Eye size={12} />
+              <span className="hidden sm:inline">PDF</span>
+            </Button>
             {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
           </div>
         </div>
@@ -196,7 +207,7 @@ function InformeCard({
   )
 }
 
-function GastosTab({ onVerFoto }: { onVerFoto: (url: string) => void }) {
+function GastosTab({ onVerFoto, onVerPdf }: { onVerFoto: (url: string) => void; onVerPdf: (informe: any, registros: any[], index: number, enProgreso?: boolean) => void }) {
   const { records: registros, isLoaded: regLoaded } = useExpenseRecords()
   const { reports: informes, isLoaded: infLoaded } = useExpenseReports()
 
@@ -242,6 +253,7 @@ function GastosTab({ onVerFoto }: { onVerFoto: (url: string) => void }) {
           index={0}
           enProgreso
           onVerFoto={onVerFoto}
+          onVerPdf={onVerPdf}
         />
       )}
       {informes.length > 0 && (
@@ -258,6 +270,7 @@ function GastosTab({ onVerFoto }: { onVerFoto: (url: string) => void }) {
               registros={inf.expense_records ?? []} 
               index={informes.length - i}
               onVerFoto={onVerFoto}
+              onVerPdf={onVerPdf}
             />
           ))}
         </>
@@ -394,6 +407,7 @@ export function DocumentHistory() {
   const { quotations, isLoaded: quotationsLoaded } = useQuotations()
   const { invoices, isLoaded: invoicesLoaded } = useInvoices()
   const { generatePdf, isGenerating } = usePdfGenerator()
+  const { generateExpensePdf, isGenerating: isGeneratingInforme } = useExpensePdfGenerator()
   const { success, error: notifError, warning } = useNotification()
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -401,6 +415,7 @@ export function DocumentHistory() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
   const [toolsPdfData, setToolsPdfData] = useState<{ tools: any[]; total: number; obraName?: string } | null>(null)
+  const [informePdfData, setInformePdfData] = useState<{ informe: any; registros: any[]; index: number; enProgreso?: boolean } | null>(null)
 
   const filteredQuotations = quotations.filter(q =>
     q.client?.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -448,6 +463,18 @@ export function DocumentHistory() {
   const handleDownloadToolsPdf = async () => {
     try { await generatePdf('tools-pdf-dialog-preview', 'herramientas') }
     catch { alert('Error al generar el PDF') }
+  }
+
+  const handleDownloadInformePdf = async () => {
+    if (!informePdfData) return
+    const nombre = informePdfData.enProgreso ? 'Informe-en-progreso' : `Informe-gastos-${informePdfData.index}`
+    try {
+      await generateExpensePdf(informePdfData.informe, informePdfData.registros ?? [], {
+        index: informePdfData.index,
+        enProgreso: informePdfData.enProgreso,
+        filename: nombre,
+      })
+    } catch { alert('Error al generar el PDF') }
   }
 
   if (!quotationsLoaded || !invoicesLoaded) {
@@ -570,7 +597,10 @@ export function DocumentHistory() {
 
         {/* Gastos */}
         <TabsContent value="gastos" className="mt-6">
-          <GastosTab onVerFoto={setFotoUrl} />
+          <GastosTab
+            onVerFoto={setFotoUrl}
+            onVerPdf={(informe, registros, index, enProgreso) => setInformePdfData({ informe, registros, index, enProgreso })}
+          />
         </TabsContent>
 
         {/* Herramientas */}
@@ -746,6 +776,212 @@ export function DocumentHistory() {
                 </div>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog vista previa informe de gastos PDF */}
+      <Dialog open={!!informePdfData} onOpenChange={() => setInformePdfData(null)}>
+        <DialogContent className="w-full max-w-2xl max-h-[92vh] flex flex-col p-0 gap-0 overflow-hidden">
+          {/* Header del dialog */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="size-9 rounded-lg bg-secondary border border-border flex items-center justify-center shrink-0">
+                <TrendingUp size={16} className="text-muted-foreground" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold leading-tight truncate">
+                  {informePdfData?.enProgreso ? 'Informe en progreso' : `Informe #${informePdfData?.index}`}
+                </h2>
+                {informePdfData?.informe?.fecha && (
+                  <span className="text-xs text-muted-foreground">{informePdfData.informe.fecha}</span>
+                )}
+              </div>
+            </div>
+            <Button size="sm" className="gap-2 shrink-0 ml-3" onClick={handleDownloadInformePdf} disabled={isGeneratingInforme}>
+              <Download className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">{isGeneratingInforme ? 'Generando...' : 'Descargar PDF'}</span>
+              <span className="sm:hidden">{isGeneratingInforme ? '...' : 'PDF'}</span>
+            </Button>
+          </div>
+
+          {/* Contenido scrollable */}
+          <div className="overflow-y-auto flex-1 p-4 sm:p-6">
+            {informePdfData && (() => {
+              const inf = informePdfData.informe
+              const regs = informePdfData.registros ?? []
+              const gastosPorCat = inf.gastos_por_cat ?? inf.gastosPorCat ?? {}
+              return (
+                <div
+                  id="informe-pdf-dialog-preview"
+                  style={{
+                    background: '#ffffff',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    color: '#111827',
+                    borderRadius: '14px',
+                    border: '1px solid #e5e7eb',
+                    boxShadow: '0 2px 16px rgba(0,0,0,0.06)',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Banda superior de color */}
+                  <div
+                    style={{
+                      background: inf.balance >= 0
+                        ? 'linear-gradient(135deg, #064e3b 0%, #047857 100%)'
+                        : 'linear-gradient(135deg, #450a0a 0%, #b91c1c 100%)',
+                      padding: '28px 40px',
+                      color: '#fff',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                          <div style={{
+                            width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.18)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                          }}>
+                            <span style={{ fontSize: 15 }}>📊</span>
+                          </div>
+                          <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, letterSpacing: '-0.01em' }}>
+                            Informe de Gastos e Ingresos
+                          </h1>
+                        </div>
+                        <span style={{
+                          display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '3px 10px',
+                          borderRadius: 999, background: 'rgba(255,255,255,0.18)', letterSpacing: '0.03em',
+                        }}>
+                          {informePdfData.enProgreso ? 'EN PROGRESO' : `INFORME #${informePdfData.index}`}
+                        </span>
+                        <p style={{ fontSize: 12, opacity: 0.85, margin: '10px 0 0' }}>
+                          {inf.fecha ?? new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </p>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{ fontSize: 10, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 3 }}>
+                          Balance final
+                        </div>
+                        <div style={{ fontSize: 28, fontWeight: 800, lineHeight: 1 }}>
+                          {formatCurrency(inf.balance)}
+                        </div>
+                        <div style={{ fontSize: 11, opacity: 0.85, marginTop: 6 }}>
+                          {(inf.total_registros ?? inf.totalRegistros ?? regs.length)} registro{(inf.total_registros ?? inf.totalRegistros ?? regs.length) !== 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '28px 40px 36px' }}>
+                    {/* Tarjetas resumen */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 28 }}>
+                      {[
+                        { label: 'Ingresos', value: inf.ingresos, color: '#065f46', bg: '#f0fdf4', border: '#bbf7d0', icon: '↑' },
+                        { label: 'Gastos', value: inf.gastos, color: '#991b1b', bg: '#fef2f2', border: '#fecaca', icon: '↓' },
+                        { label: 'Balance', value: inf.balance, color: inf.balance >= 0 ? '#065f46' : '#991b1b', bg: inf.balance >= 0 ? '#f0fdf4' : '#fef2f2', border: inf.balance >= 0 ? '#bbf7d0' : '#fecaca', icon: '=' },
+                      ].map(c => (
+                        <div key={c.label} style={{ background: c.bg, borderRadius: 10, padding: '14px 16px', border: `1px solid ${c.border}` }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                            <span style={{ fontSize: 13, fontWeight: 800, color: c.color }}>{c.icon}</span>
+                            <span style={{ fontSize: 10, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>{c.label}</span>
+                          </div>
+                          <div style={{ fontSize: 17, fontWeight: 800, color: c.color }}>{formatCurrency(c.value)}</div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Gastos por categoría */}
+                    {Object.keys(gastosPorCat).length > 0 && (() => {
+                      const maxCat = Math.max(...Object.values(gastosPorCat).map(v => v as number), 1)
+                      return (
+                        <div style={{ marginBottom: 28 }}>
+                          <div style={{ fontSize: 12, fontWeight: 800, color: '#111827', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ width: 3, height: 13, background: '#991b1b', borderRadius: 2, display: 'inline-block' }} />
+                            Gastos por categoría
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                            {Object.entries(gastosPorCat).map(([cat, total]) => {
+                              const pct = Math.round(((total as number) / maxCat) * 100)
+                              return (
+                                <div key={cat}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <span style={{ fontSize: 12.5, color: '#374151', fontWeight: 600 }}>{cat}</span>
+                                    <span style={{ fontSize: 12.5, fontWeight: 700, color: '#991b1b' }}>{formatCurrency(total as number)}</span>
+                                  </div>
+                                  <div style={{ height: 6, background: '#f3f4f6', borderRadius: 999, overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', width: `${pct}%`, background: 'linear-gradient(90deg, #f87171, #b91c1c)', borderRadius: 999 }} />
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Detalle de registros */}
+                    {regs.length > 0 && (
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: '#111827', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ width: 3, height: 13, background: '#111827', borderRadius: 2, display: 'inline-block' }} />
+                          Detalle de registros
+                        </div>
+                        <div style={{ border: '1px solid #e5e7eb', borderRadius: 10, overflow: 'hidden' }}>
+                          <div style={{
+                            display: 'grid', gridTemplateColumns: '1fr 110px 90px 100px', gap: 0,
+                            padding: '9px 14px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb',
+                          }}>
+                            {['Descripción', 'Categoría', 'Fecha', 'Monto'].map(h => (
+                              <span key={h} style={{ fontSize: 10, fontWeight: 800, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
+                            ))}
+                          </div>
+                          {regs.map((r, i) => (
+                            <div
+                              key={r.id ?? i}
+                              style={{
+                                display: 'grid',
+                                gridTemplateColumns: '1fr 110px 90px 100px',
+                                alignItems: 'center',
+                                padding: '10px 14px',
+                                background: i % 2 === 0 ? '#ffffff' : '#fafafa',
+                                borderBottom: i === regs.length - 1 ? 'none' : '1px solid #f3f4f6',
+                                fontSize: 12.5,
+                              }}
+                            >
+                              <span style={{ color: '#111827', fontWeight: 600 }}>{r.descripcion}</span>
+                              <span style={{ color: '#6b7280' }}>{r.cat || '—'}</span>
+                              <span style={{ color: '#6b7280' }}>{r.fecha}</span>
+                              <span style={{
+                                fontWeight: 700,
+                                color: r.tipo === 'ingreso' ? '#065f46' : '#991b1b',
+                                display: 'flex', alignItems: 'center', gap: 4,
+                              }}>
+                                <span style={{ fontSize: 10 }}>{r.tipo === 'ingreso' ? '↑' : '↓'}</span>
+                                {formatCurrency(r.monto)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Total footer */}
+                    <div style={{
+                      marginTop: 24, padding: '16px 20px', borderRadius: 10,
+                      background: inf.balance >= 0 ? '#f0fdf4' : '#fef2f2',
+                      border: `1px solid ${inf.balance >= 0 ? '#bbf7d0' : '#fecaca'}`,
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    }}>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#374151', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Balance final
+                      </span>
+                      <span style={{ fontSize: 22, fontWeight: 800, color: inf.balance >= 0 ? '#065f46' : '#991b1b' }}>
+                        {formatCurrency(inf.balance)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         </DialogContent>
       </Dialog>
