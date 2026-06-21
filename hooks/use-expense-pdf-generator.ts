@@ -61,14 +61,11 @@ const MARGIN = 15
 const CONTENT_W = PAGE_W - MARGIN * 2
 
 interface LoadedImage {
-  dataUrl: string   // dataUrl ya redimensionado, listo para jsPDF
-  width: number     // ancho original (para calcular ratio)
-  height: number    // alto original
-  format: 'JPEG' | 'PNG'
+  dataUrl: string
+  width: number
+  height: number
 }
 
-// Máxima dimensión en píxeles que se pasará a jsPDF.
-// jsPDF falla silenciosamente con imágenes demasiado grandes.
 const MAX_IMG_PX = 1200
 
 async function loadImageAsDataUrl(url: string, timeoutMs = 15000): Promise<LoadedImage | null> {
@@ -81,9 +78,6 @@ async function loadImageAsDataUrl(url: string, timeoutMs = 15000): Promise<Loade
     const blob = await res.blob()
     if (!blob.type.startsWith('image/')) return null
 
-    const format: 'JPEG' | 'PNG' = blob.type.includes('png') ? 'PNG' : 'JPEG'
-
-    // Cargar en un elemento Image para obtener dimensiones reales
     const originalDataUrl: string = await new Promise((resolve, reject) => {
       const reader = new FileReader()
       reader.onload = () => resolve(reader.result as string)
@@ -100,12 +94,10 @@ async function loadImageAsDataUrl(url: string, timeoutMs = 15000): Promise<Loade
       }
     )
 
-    // Si la imagen cabe dentro del límite, devolverla tal cual
     if (naturalWidth <= MAX_IMG_PX && naturalHeight <= MAX_IMG_PX) {
-      return { dataUrl: originalDataUrl, width: naturalWidth, height: naturalHeight, format }
+      return { dataUrl: originalDataUrl, width: naturalWidth, height: naturalHeight }
     }
 
-    // Redimensionar mediante canvas para que jsPDF no falle
     const scale = MAX_IMG_PX / Math.max(naturalWidth, naturalHeight)
     const targetW = Math.round(naturalWidth * scale)
     const targetH = Math.round(naturalHeight * scale)
@@ -125,7 +117,7 @@ async function loadImageAsDataUrl(url: string, timeoutMs = 15000): Promise<Loade
       img.src = originalDataUrl
     })
 
-    return { dataUrl: resizedDataUrl, width: naturalWidth, height: naturalHeight, format: 'JPEG' }
+    return { dataUrl: resizedDataUrl, width: naturalWidth, height: naturalHeight }
   } catch {
     return null
   }
@@ -181,6 +173,7 @@ export function useExpensePdfGenerator() {
 
       let y = 0
 
+      // ---------- Encabezado ----------
       const headerH = 42
       pdf.setFillColor(...mainColorDark)
       pdf.rect(0, 0, PAGE_W, headerH, 'F')
@@ -220,6 +213,7 @@ export function useExpensePdfGenerator() {
 
       y = headerH + 12
 
+      // ---------- Tarjetas resumen ----------
       const cardGap = 5
       const cardW = (CONTENT_W - cardGap * 2) / 3
       const cardH = 20
@@ -244,6 +238,7 @@ export function useExpensePdfGenerator() {
       })
       y += cardH + 12
 
+      // ---------- Gastos por categoría ----------
       const catEntries = Object.entries(gastosPorCat)
       if (catEntries.length > 0) {
         pdf.setFillColor(153, 27, 27)
@@ -283,9 +278,18 @@ export function useExpensePdfGenerator() {
         }
       }
 
+      // ---------- Detalle de registros ----------
+      // Los registros con foto se renderizan de forma diferente:
+      // la fila de texto va primero, luego debajo la imagen a ancho completo
+      // con un encabezado de sección coloreado que indica a qué gasto pertenece.
+
+      const IMG_DISPLAY_W = CONTENT_W          // ancho completo del contenido
+      const IMG_MAX_DISPLAY_H = 80             // alto máximo en mm (~10cm)
+      const IMG_MIN_DISPLAY_H = 40             // alto mínimo para fotos muy anchas
+
       const colDesc = MARGIN
-      const colCat = MARGIN + CONTENT_W * 0.46
-      const colFecha = MARGIN + CONTENT_W * 0.68
+      const colCat = MARGIN + CONTENT_W * 0.42
+      const colFecha = MARGIN + CONTENT_W * 0.64
       const colMonto = PAGE_W - MARGIN
 
       function drawTableHeader() {
@@ -317,60 +321,95 @@ export function useExpensePdfGenerator() {
 
         registros.forEach((r, i) => {
           const img = r.foto_url ? imagenes.get(r.foto_url) : undefined
-          const IMG_MAX_W = 32
-          const IMG_MAX_H = 24
-          let imgW = 0
-          let imgH = 0
+
+          // Calcular dimensiones de imagen manteniendo proporción
+          let imgDisplayW = 0
+          let imgDisplayH = 0
           if (img) {
             const ratio = img.width / img.height
-            imgW = IMG_MAX_W
-            imgH = imgW / ratio
-            if (imgH > IMG_MAX_H) {
-              imgH = IMG_MAX_H
-              imgW = imgH * ratio
+            imgDisplayW = IMG_DISPLAY_W
+            imgDisplayH = imgDisplayW / ratio
+            if (imgDisplayH > IMG_MAX_DISPLAY_H) {
+              imgDisplayH = IMG_MAX_DISPLAY_H
+              imgDisplayW = imgDisplayH * ratio
+            }
+            if (imgDisplayH < IMG_MIN_DISPLAY_H) {
+              imgDisplayH = IMG_MIN_DISPLAY_H
+              imgDisplayW = Math.min(imgDisplayH * ratio, IMG_DISPLAY_W)
             }
           }
-          const baseRowH = 8
-          const rowH = img ? baseRowH + imgH + 5 : baseRowH
 
-          checkPageBreak(rowH + 2)
+          const ROW_H = 9          // altura de la fila de texto
+          const LABEL_H = 6        // altura del encabezado de foto
+          const IMG_PADDING = 3    // padding interno de la tarjeta de foto
+          const CARD_H = img ? LABEL_H + IMG_PADDING + imgDisplayH + IMG_PADDING + 4 : 0
+          const totalH = ROW_H + CARD_H
+
+          checkPageBreak(totalH + 2)
           if (y === MARGIN) drawTableHeader()
 
-          pdf.setFillColor(i % 2 === 0 ? 255 : 250, i % 2 === 0 ? 255 : 250, i % 2 === 0 ? 255 : 250)
-          pdf.rect(MARGIN, y, CONTENT_W, rowH, 'F')
+          // Fila de texto (alternada)
+          const rowBg: [number, number, number] = i % 2 === 0 ? [255, 255, 255] : [250, 250, 250]
+          pdf.setFillColor(...rowBg)
+          pdf.rect(MARGIN, y, CONTENT_W, ROW_H, 'F')
 
           pdf.setFont('helvetica', 'bold')
           pdf.setFontSize(8.5)
           pdf.setTextColor(17, 24, 39)
           const descTrunc = pdf.splitTextToSize(r.descripcion ?? '', (colCat - colDesc) - 4)[0] ?? ''
-          pdf.text(descTrunc, colDesc + 2, y + 5.3)
+          pdf.text(descTrunc, colDesc + 2, y + 6)
 
           pdf.setFont('helvetica', 'normal')
+          pdf.setFontSize(8)
           pdf.setTextColor(107, 114, 128)
-          pdf.text(r.cat || '—', colCat, y + 5.3)
-          pdf.text(r.fecha || '', colFecha, y + 5.3)
+          pdf.text(r.cat || '—', colCat, y + 6)
+          pdf.text(r.fecha || '', colFecha, y + 6)
 
           const isIngreso = r.tipo === 'ingreso'
           pdf.setFont('helvetica', 'bold')
+          pdf.setFontSize(8.5)
           pdf.setTextColor(...(isIngreso ? ([6, 95, 70] as [number, number, number]) : ([153, 27, 27] as [number, number, number])))
-          pdf.text(`${isIngreso ? '+' : '-'}${formatCurrency(r.monto ?? 0)}`, colMonto, y + 5.3, { align: 'right' })
+          pdf.text(`${isIngreso ? '+' : '-'}${formatCurrency(r.monto ?? 0)}`, colMonto, y + 6, { align: 'right' })
 
+          y += ROW_H
+
+          // Bloque de imagen si existe
           if (img) {
-            const imgX = colDesc + 2
-            const imgY = y + baseRowH + 1
-            pdf.setDrawColor(229, 231, 235)
-            pdf.setLineWidth(0.2)
-            pdf.rect(imgX - 0.5, imgY - 0.5, imgW + 1, imgH + 1)
-            pdf.addImage(img.dataUrl, 'JPEG', imgX, imgY, imgW, imgH)
+            // Encabezado de la tarjeta de foto — identifica a qué gasto pertenece
+            const headerColor: [number, number, number] = isIngreso ? [4, 78, 56] : [120, 20, 20]
+            const headerBg: [number, number, number] = isIngreso ? [6, 95, 70] : [153, 27, 27]
+            pdf.setFillColor(...headerBg)
+            pdf.rect(MARGIN, y, CONTENT_W, LABEL_H, 'F')
+            pdf.setTextColor(255, 255, 255)
+            pdf.setFont('helvetica', 'bold')
+            pdf.setFontSize(7)
+            // Icono de cámara unicode como texto
+            pdf.text('Comprobante: ' + (r.descripcion ?? ''), MARGIN + 3, y + 4.2)
+            y += LABEL_H
+
+            // Fondo de la tarjeta de foto
+            pdf.setFillColor(245, 245, 245)
+            pdf.setDrawColor(220, 220, 220)
+            pdf.rect(MARGIN, y, CONTENT_W, imgDisplayH + IMG_PADDING * 2, 'FD')
+
+            // Imagen centrada dentro de la tarjeta
+            const imgX = MARGIN + (CONTENT_W - imgDisplayW) / 2
+            const imgY = y + IMG_PADDING
+            pdf.addImage(img.dataUrl, 'JPEG', imgX, imgY, imgDisplayW, imgDisplayH)
+
+            y += imgDisplayH + IMG_PADDING * 2 + 4
           }
 
-          pdf.setDrawColor(243, 244, 246)
-          pdf.line(MARGIN, y + rowH, PAGE_W - MARGIN, y + rowH)
-          y += rowH
+          // Línea separadora
+          pdf.setDrawColor(229, 231, 235)
+          pdf.setLineWidth(0.2)
+          pdf.line(MARGIN, y, PAGE_W - MARGIN, y)
+          y += 0.5
         })
         y += 8
       }
 
+      // ---------- Footer ----------
       checkPageBreak(20)
       pdf.setFillColor(...lightBg)
       pdf.setDrawColor(...lightBorder)
