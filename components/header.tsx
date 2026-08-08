@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import {
   FileText,
   Settings,
@@ -16,6 +17,11 @@ import {
   Moon,
   ShieldCheck,
   Tag,
+  Download,
+  Share,
+  SquarePlus,
+  Smartphone,
+  Monitor,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -23,10 +29,18 @@ import {
   SheetContent,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog'
 import Link from 'next/link'
 import { useAuth } from '@/hooks/use-auth'
 import { useNotification } from '@/hooks/use_notification'
 import { useTheme } from 'next-themes'
+import { usePwaInstall } from '@/hooks/use-pwa-install'
 
 interface HeaderProps {
   onSettingsClick?: () => void
@@ -53,6 +67,8 @@ export function Header({ onSettingsClick }: HeaderProps) {
   const { user, signOut } = useAuth()
   const { success } = useNotification()
   const { theme, setTheme } = useTheme()
+  const { installed, isIOS, canInstall, hasNativePrompt, promptInstall } = usePwaInstall()
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false)
 
   const isAdmin = !!user?.email && !!ADMIN_EMAIL && user.email.toLowerCase() === ADMIN_EMAIL
 
@@ -62,6 +78,18 @@ export function Header({ onSettingsClick }: HeaderProps) {
   }
 
   const toggleTheme = () => setTheme(theme === 'dark' ? 'light' : 'dark')
+
+  const handleInstallClick = async () => {
+    if (hasNativePrompt) {
+      const outcome = await promptInstall()
+      if (outcome === 'accepted') {
+        success('¡Listo!', 'CotiFactura se está instalando')
+      }
+      return
+    }
+    // iOS u otros navegadores sin prompt nativo: mostramos instrucciones.
+    setShowIOSInstructions(true)
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
@@ -150,6 +178,25 @@ export function Header({ onSettingsClick }: HeaderProps) {
                   </Button>
                 ))}
 
+                {canInstall && (
+                  <>
+                    <div className="my-2 mx-2 border-t border-border/50" />
+                    <Button
+                      variant="ghost"
+                      className="group justify-between h-12 px-4 rounded-xl hover:bg-emerald-500/10 hover:text-blue-600 transition-all duration-200"
+                      onClick={handleInstallClick}
+                    >
+                      <span className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 group-hover:bg-emerald-500/20 transition-colors">
+                          <Download className="h-4 w-4" />
+                        </div>
+                        <span className="font-medium">Descargar app</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-50 group-hover:translate-x-0 transition-all" />
+                    </Button>
+                  </>
+                )}
+
                 {isAdmin && (
                   <>
                     <div className="my-2 mx-2 border-t border-border/50" />
@@ -226,6 +273,51 @@ export function Header({ onSettingsClick }: HeaderProps) {
         </div>
 
       </div>
+
+      {/* Instrucciones para instalar en iOS / navegadores sin prompt nativo */}
+      <Dialog open={showIOSInstructions} onOpenChange={setShowIOSInstructions}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
+              <Download className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <DialogTitle className="text-center">Instalar CotiFactura</DialogTitle>
+            <DialogDescription className="text-center">
+              {isIOS
+                ? 'Agrégala a tu pantalla de inicio para abrirla como una app.'
+                : 'Sigue estos pasos desde el menú de tu navegador para instalarla.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <ol className="flex flex-col gap-3 py-2">
+            <li className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <Share className="h-4 w-4" />
+              </div>
+              <span className="text-sm">
+                {isIOS
+                  ? 'Toca el botón Compartir en la barra de Safari'
+                  : 'Abre el menú de opciones de tu navegador'}
+              </span>
+            </li>
+            <li className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <SquarePlus className="h-4 w-4" />
+              </div>
+              <span className="text-sm">
+                Selecciona <strong>&quot;Agregar a pantalla de inicio&quot;</strong>
+                {!isIOS && ' o "Instalar aplicación"'}
+              </span>
+            </li>
+            <li className="flex items-center gap-3 rounded-xl border border-border/50 bg-muted/30 p-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted">
+                {isIOS ? <Smartphone className="h-4 w-4" /> : <Monitor className="h-4 w-4" />}
+              </div>
+              <span className="text-sm">Confirma y listo, tendrás CotiFactura como una app</span>
+            </li>
+          </ol>
+        </DialogContent>
+      </Dialog>
     </header>
   )
 }

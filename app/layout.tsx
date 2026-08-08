@@ -1,10 +1,11 @@
 import type { Metadata, Viewport } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, DM_Sans } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { NotificationProvider } from '@/hooks/use_notification'
 import { AuthGuard } from '@/components/auth-guard'
 import { SubscriptionGuard } from '@/components/subscription-guard'
 import { ThemeProvider } from '@/components/theme-provider'
+import { SwRegister } from '@/components/sw-register'
 import './globals.css'
 
 const geist = Geist({
@@ -15,6 +16,11 @@ const geist = Geist({
 const geistMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-geist-mono",
+})
+
+const dmSans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-dm-sans",
 })
 
 export const metadata: Metadata = {
@@ -55,13 +61,14 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="es" className={`${geist.variable} ${geistMono.variable} bg-background`} suppressHydrationWarning>
+    <html lang="es" className={`${geist.variable} ${geistMono.variable} ${dmSans.variable} bg-background`} suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="font-sans antialiased min-h-screen">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+          <SwRegister />
           <NotificationProvider>
             <AuthGuard>
               <SubscriptionGuard>

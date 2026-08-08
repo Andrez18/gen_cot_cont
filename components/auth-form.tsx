@@ -4,7 +4,12 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useNotification } from '@/hooks/use_notification'
 
-export function AuthForm() {
+interface AuthFormProps {
+  /** 'page' = pantalla completa (uso original). 'modal' = solo la card, sin el wrapper de 100vh. */
+  variant?: 'page' | 'modal'
+}
+
+export function AuthForm({ variant = 'page' }: AuthFormProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -60,16 +65,7 @@ export function AuthForm() {
     boxSizing: 'border-box',
   }
 
-  return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#f9fafb',
-      fontFamily: 'Arial, sans-serif',
-      padding: '16px',
-    }}>
+  const card = (
       <div style={{
         background: '#fff',
         borderRadius: '16px',
@@ -78,6 +74,7 @@ export function AuthForm() {
         maxWidth: '400px',
         boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
         border: '1px solid #e5e7eb',
+        fontFamily: 'Arial, sans-serif',
       }}>
         {/* Logo / título */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
@@ -184,6 +181,23 @@ export function AuthForm() {
           </button>
         </p>
       </div>
+  )
+
+  if (variant === 'modal') {
+    return card
+  }
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#f9fafb',
+      fontFamily: 'Arial, sans-serif',
+      padding: '16px',
+    }}>
+      {card}
     </div>
   )
 }
