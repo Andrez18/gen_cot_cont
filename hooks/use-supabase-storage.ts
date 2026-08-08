@@ -298,6 +298,46 @@ export function usePhotoUpload() {
 }
 
 /* =========================
+   STORAGE – COMPROBANTE DE PAGO
+========================= */
+
+export function usePaymentProofUpload() {
+  const [isUploading, setIsUploading] = useState(false)
+
+  // Sube el comprobante (foto del pago por Nequi) al bucket privado
+  // "payment-proofs", dentro de la carpeta del usuario. Devuelve el path
+  // relativo (ej: "userId/timestamp-comprobante.jpg"), que es lo que se
+  // envía a /api/payments/submit para que el servidor valide y guarde.
+  const uploadProof = useCallback(async (file: File): Promise<string | null> => {
+    setIsUploading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return null
+
+      const ext = file.name.split('.').pop()
+      const fileName = `${user.id}/${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2)}.${ext}`
+
+      const { error } = await supabase.storage
+        .from('payment-proofs')
+        .upload(fileName, file, { contentType: file.type })
+
+      if (error) {
+        console.error('Error subiendo comprobante:', error.message)
+        return null
+      }
+
+      return fileName
+    } finally {
+      setIsUploading(false)
+    }
+  }, [])
+
+  return { uploadProof, isUploading }
+}
+
+/* =========================
    TOOLS
 ========================= */
 

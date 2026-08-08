@@ -21,6 +21,11 @@ export interface ProviderInfo {
   phone: string
   email: string
   address: string
+  // Path dentro del bucket privado "signatures" (no una URL), se resuelve
+  // a una URL firmada en el momento de mostrarla. Queda guardado tal cual
+  // dentro de cada cotización/cuenta de cobro para que el historial
+  // siempre muestre la firma vigente al momento en que se creó el documento.
+  signaturePath?: string
 }
 
 export interface ClientInfo {

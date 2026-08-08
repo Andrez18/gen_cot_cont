@@ -11,9 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Save, User, Building2, CreditCard } from 'lucide-react'
+import { Save, User, Building2, CreditCard, PenTool, X } from 'lucide-react'
 import { useSettings } from '@/hooks/use-settings'
 import { useNotification } from '@/hooks/use_notification'
+import { useState } from 'react'
 
 export function SettingsForm() {
   const {
@@ -22,11 +23,33 @@ export function SettingsForm() {
     clientInfo, setClientInfo,
     isLoaded, isSaving,
     saveSettings,
+    signatureUrl,
+    hasSignature,
+    pendingSignatureFile,
+    setPendingSignatureFile,
+    removeSignature,
   } = useSettings()
 
   const { success, error: notifError, loading, dismiss } = useNotification()
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null)
+
+  const handleSignatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setPendingSignatureFile(file)
+    setSignaturePreview(URL.createObjectURL(file))
+  }
+
+  const handleRemoveSignature = () => {
+    setSignaturePreview(null)
+    removeSignature()
+  }
 
   const handleSave = async () => {
+    if (!hasSignature) {
+      notifError('Falta tu firma', 'Agrega una imagen de tu firma antes de guardar la configuración')
+      return
+    }
     const loadingId = loading('Guardando configuración...')
     const { error } = await saveSettings()
     dismiss(loadingId)
@@ -126,6 +149,53 @@ export function SettingsForm() {
               placeholder="Calle 123 # 45-67, Medellín"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Firma personal (obligatoria) */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <PenTool className="h-5 w-5" />
+            Mi firma
+            <span className="text-xs font-normal text-destructive">(obligatoria)</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Esta firma aparece en tus cotizaciones y cuentas de cobro. Cada
+            persona debe subir la suya: ya no se usa una firma compartida.
+          </p>
+
+          {(signaturePreview ?? signatureUrl) ? (
+            <div className="flex items-center gap-4">
+              <div className="h-20 w-40 flex items-center justify-center rounded-md border bg-white p-2">
+                <img
+                  src={signaturePreview ?? signatureUrl ?? undefined}
+                  alt="Firma"
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="text-xs underline cursor-pointer text-muted-foreground">
+                  Cambiar firma
+                  <input type="file" accept="image/*" onChange={handleSignatureChange} style={{ display: 'none' }} />
+                </label>
+                <button
+                  onClick={handleRemoveSignature}
+                  className="flex items-center gap-1 text-xs text-destructive underline"
+                >
+                  <X className="h-3 w-3" /> Quitar firma
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className="flex items-center justify-center gap-2 rounded-md border border-dashed p-6 text-sm text-muted-foreground cursor-pointer hover:bg-muted/40">
+              <PenTool className="h-4 w-4" />
+              Subir imagen de mi firma (PNG con fondo transparente recomendado)
+              <input type="file" accept="image/*" onChange={handleSignatureChange} style={{ display: 'none' }} />
+            </label>
+          )}
         </CardContent>
       </Card>
 

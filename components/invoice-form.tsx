@@ -33,7 +33,7 @@ import { useInvoices } from '@/hooks/use-supabase-storage'
 
 export function InvoiceForm() {
   const { saveInvoice } = useInvoices()  
-  const { providerInfo, bankInfo, clientInfo, isLoaded } = useSettings()
+  const { providerInfo, bankInfo, clientInfo, isLoaded, signaturePath, hasSignature } = useSettings()
 
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
   const { value: savedBank, setValue: setSavedBank } = useLocalStorage<BankInfo>('bank', DEFAULT_BANK_INFO)
@@ -59,11 +59,11 @@ export function InvoiceForm() {
 
   useEffect(() => {
     if (isLoaded) {
-      setProvider(providerInfo)
+      setProvider({ ...providerInfo, signaturePath: signaturePath ?? undefined })
       setBankInfo(bankInfo)
       setClient(clientInfo)
     }
-  }, [isLoaded])
+  }, [isLoaded, signaturePath])
 
   useEffect(() => { setProvider(savedProvider) }, [savedProvider])
   useEffect(() => { setBankInfo(savedBank) }, [savedBank])
@@ -99,6 +99,10 @@ export function InvoiceForm() {
   }
 
   const handleDownloadPdf = async () => {
+    if (!hasSignature) {
+      notifError('Falta tu firma', 'Ve a Configuración y agrega tu firma antes de generar el PDF')
+      return
+    }
     const loadingId = loading('Generando PDF...')
     try {
       await generatePdf('invoice-preview', `CuentaCobro-${documentNumber}`)
@@ -133,6 +137,13 @@ export function InvoiceForm() {
 
   return (
     <div className="space-y-6">
+      {isLoaded && !hasSignature && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm text-amber-800 dark:text-amber-200">
+          Aún no has agregado tu firma. Ve a{' '}
+          <a href="/settings" className="underline font-medium">Configuración</a>{' '}
+          para agregarla antes de generar tus documentos en PDF.
+        </div>
+      )}
       {/* Document Info */}
       <Card>
         <CardHeader>

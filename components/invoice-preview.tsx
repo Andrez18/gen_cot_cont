@@ -1,13 +1,32 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Invoice } from '@/lib/types'
 import { formatCurrency, formatDate } from '@/lib/document-utils'
+import { supabase } from '@/lib/supabase'
 
 interface InvoicePreviewProps {
   invoice: Invoice
 }
 
 export function InvoicePreview({ invoice }: InvoicePreviewProps) {
+  const [signatureUrl, setSignatureUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const path = invoice.provider.signaturePath
+    if (!path) { setSignatureUrl(null); return }
+
+    supabase.storage
+      .from('signatures')
+      .createSignedUrl(path, 60 * 60)
+      .then(({ data }) => {
+        if (!cancelled) setSignatureUrl(data?.signedUrl ?? null)
+      })
+
+    return () => { cancelled = true }
+  }, [invoice.provider.signaturePath])
+
   return (
     <div 
       id="invoice-preview"
@@ -86,21 +105,22 @@ export function InvoicePreview({ invoice }: InvoicePreviewProps) {
 
           {/* Contenedor relativo para superponer firma y línea */}
           <div style={{ position: 'relative', height: '60px', marginBottom: '8px' }}>
-            <img
-              src="/firma.png"
-              alt="Firma"
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                height: '80px',
-                width: 'auto',
-                objectFit: 'contain',
-                zIndex: 0
-              }}
-            />
-
+            {signatureUrl && (
+              <img
+                src={signatureUrl}
+                alt="Firma"
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  height: '80px',
+                  width: 'auto',
+                  objectFit: 'contain',
+                  zIndex: 0
+                }}
+              />
+            )}
             <div style={{
               position: 'absolute',
               bottom: 0,

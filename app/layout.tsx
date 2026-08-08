@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { NotificationProvider } from '@/hooks/use_notification'
 import { AuthGuard } from '@/components/auth-guard'
+import { SubscriptionGuard } from '@/components/subscription-guard'
 import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
@@ -63,7 +64,9 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <NotificationProvider>
             <AuthGuard>
-              {children}
+              <SubscriptionGuard>
+                {children}
+              </SubscriptionGuard>
               {process.env.NODE_ENV === 'production' && <Analytics />}
             </AuthGuard>
           </NotificationProvider>

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import { formatCurrency } from '@/lib/document-utils'
 import { useExpenseRecords, useExpenseReports, usePhotoUpload } from '@/hooks/use-supabase-storage'
 import { useNotification } from '@/hooks/use_notification'
@@ -14,6 +15,21 @@ const CATEGORIAS = [
 
 function hoy() {
   return new Date().toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' })
+}
+
+// El bucket "expense-photos" es privado: uploadPhoto guarda un path con
+// prefijo "supabase-storage://expense-photos/..." en vez de una URL usable
+// directamente. Acá lo convertimos a una URL firmada para poder mostrarlo.
+async function resolveFotoUrl(raw: string): Promise<string | null> {
+  if (raw.startsWith('supabase-storage://expense-photos/')) {
+    const path = raw.replace('supabase-storage://expense-photos/', '')
+    const { data } = await supabase.storage
+      .from('expense-photos')
+      .createSignedUrl(path, 60 * 60)
+    return data?.signedUrl ?? null
+  }
+  // Formato antiguo (URL pública directa): se usa tal cual.
+  return raw
 }
 
 const inputStyle: React.CSSProperties = {
@@ -37,11 +53,34 @@ export function ExpenseForm() {
   const [vistaInformes, setVistaInformes] = useState(false)
   const [fotoFile, setFotoFile] = useState<File | null>(null)
   const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const [fotoModal, setFotoModal] = useState<string | null>(null)
+  const [fotoUrls, setFotoUrls] = useState<Record<string, string>>({})
+  const [registroAEliminar, setRegistroAEliminar] = useState<{ id: string; descripcion: string } | null>(null)
   const { success, error: notifError, loading, dismiss, warning } = useNotification()
 
   const ingresos = registros.filter(r => r.tipo === 'ingreso').reduce((a, r) => a + r.monto, 0)
   const gastos   = registros.filter(r => r.tipo === 'gasto').reduce((a, r) => a + r.monto, 0)
   const balance  = ingresos - gastos
+
+  useEffect(() => {
+    let cancelled = false
+    const pendientes = registros.filter(r => r.foto_url && !fotoUrls[r.id])
+    if (pendientes.length === 0) return
+
+    ;(async () => {
+      const resueltas = await Promise.all(
+        pendientes.map(async (r) => [r.id, await resolveFotoUrl(r.foto_url!)] as const)
+      )
+      if (cancelled) return
+      setFotoUrls(prev => {
+        const next = { ...prev }
+        for (const [id, url] of resueltas) if (url) next[id] = url
+        return next
+      })
+    })()
+
+    return () => { cancelled = true }
+  }, [registros])
 
   const handleFotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -81,6 +120,13 @@ export function ExpenseForm() {
       `${descripcion} — ${formatCurrency(montoNum)}`
     )
   }, [descripcion, monto, cat, tipo, fotoFile, addRecord, uploadPhoto, success, notifError, warning, loading, dismiss])
+
+  const confirmarEliminar = useCallback(async () => {
+    if (!registroAEliminar) return
+    await deleteRecord(registroAEliminar.id)
+    success('Registro eliminado', registroAEliminar.descripcion)
+    setRegistroAEliminar(null)
+  }, [registroAEliminar, deleteRecord, success])
 
   const generarInforme = useCallback(async () => {
     const loadingId = loading('Generando informe...')
@@ -251,11 +297,20 @@ export function ExpenseForm() {
                     {r.descripcion}
                   </span>
                   {r.foto_url && (
-                    <a href={r.foto_url} target="_blank" rel="noopener noreferrer">
-                      <img src={r.foto_url} alt="recibo" style={{ height: '32px', width: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb' }} />
-                    </a>
+                    fotoUrls[r.id] ? (
+                      <button
+                        onClick={() => setFotoModal(fotoUrls[r.id])}
+                        style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 0, flexShrink: 0 }}
+                      >
+                        <img src={fotoUrls[r.id]} alt="recibo" style={{ height: '32px', width: '32px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #e5e7eb' }} />
+                      </button>
+                    ) : (
+                      <span style={{ height: '32px', width: '32px', borderRadius: '4px', border: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0, color: '#9ca3af' }}>
+                        📷
+                      </span>
+                    )
                   )}
-                  <button onClick={() => deleteRecord(r.id)}
+                  <button onClick={() => setRegistroAEliminar({ id: r.id, descripcion: r.descripcion })}
                     style={{ background: 'none', border: 'none', color: '#d1d5db', cursor: 'pointer', fontSize: '16px', padding: '0 2px', lineHeight: 1, fontFamily: 'Arial', flexShrink: 0 }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#d1d5db')}>×</button>
@@ -309,6 +364,81 @@ export function ExpenseForm() {
             </div>
           )}
         </>
+      )}
+
+      {/* Modal confirmar eliminación */}
+      {registroAEliminar && (
+        <div
+          onClick={() => setRegistroAEliminar(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: '24px',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: '10px', padding: '22px',
+              maxWidth: '340px', width: '100%', boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
+            }}
+          >
+            <div style={{ fontSize: '15px', fontWeight: 'bold', color: '#111827', marginBottom: '6px' }}>
+              ¿Eliminar este registro?
+            </div>
+            <div style={{ fontSize: '13px', color: '#6b7280', marginBottom: '20px' }}>
+              Se eliminará "{registroAEliminar.descripcion}". Esta acción no se puede deshacer.
+            </div>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setRegistroAEliminar(null)}
+                style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: '6px', padding: '7px 14px', fontSize: '13px', cursor: 'pointer', color: '#374151', fontFamily: 'Arial' }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarEliminar}
+                style={{ background: '#ef4444', border: 'none', borderRadius: '6px', padding: '7px 14px', fontSize: '13px', cursor: 'pointer', color: '#fff', fontFamily: 'Arial', fontWeight: 600 }}
+              >
+                Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal foto ampliada */}
+      {fotoModal && (
+        <div
+          onClick={() => setFotoModal(null)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: '24px', cursor: 'zoom-out',
+          }}
+        >
+          <button
+            onClick={() => setFotoModal(null)}
+            aria-label="Cerrar"
+            style={{
+              position: 'absolute', top: '16px', right: '16px',
+              background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff',
+              width: '36px', height: '36px', borderRadius: '50%', fontSize: '20px',
+              cursor: 'pointer', lineHeight: 1, fontFamily: 'Arial',
+            }}
+          >
+            ×
+          </button>
+          <img
+            src={fotoModal}
+            alt="Comprobante"
+            onClick={e => e.stopPropagation()}
+            style={{
+              maxWidth: '100%', maxHeight: '90vh', borderRadius: '8px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.4)', cursor: 'default',
+            }}
+          />
+        </div>
       )}
     </div>
   )

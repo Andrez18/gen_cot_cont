@@ -14,6 +14,8 @@ import {
   Wrench,
   Sun,
   Moon,
+  ShieldCheck,
+  Tag,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -30,6 +32,13 @@ interface HeaderProps {
   onSettingsClick?: () => void
 }
 
+const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase().trim()
+
+const ADMIN_LINKS = [
+  { href: '/admin/payments',        label: 'Pagos pendientes',    icon: ShieldCheck },
+  { href: '/admin/discount-codes',  label: 'Códigos de descuento', icon: Tag },
+]
+
 const NAV_LINKS = [
   { href: '/',               label: 'Inicio',             icon: Home },
   { href: '/quotation/new',  label: 'Nueva Cotización',   icon: FileSpreadsheet },
@@ -44,6 +53,8 @@ export function Header({ onSettingsClick }: HeaderProps) {
   const { user, signOut } = useAuth()
   const { success } = useNotification()
   const { theme, setTheme } = useTheme()
+
+  const isAdmin = !!user?.email && !!ADMIN_EMAIL && user.email.toLowerCase() === ADMIN_EMAIL
 
   const handleSignOut = async () => {
     await signOut()
@@ -138,6 +149,30 @@ export function Header({ onSettingsClick }: HeaderProps) {
                     </Link>
                   </Button>
                 ))}
+
+                {isAdmin && (
+                  <>
+                    <div className="my-2 mx-2 border-t border-border/50" />
+                    {ADMIN_LINKS.map(({ href, label, icon: Icon }) => (
+                      <Button
+                        key={href}
+                        variant="ghost"
+                        className="group justify-between h-12 px-4 rounded-xl hover:bg-amber-500/10 transition-all duration-200"
+                        asChild
+                      >
+                        <Link href={href}>
+                          <span className="flex items-center gap-3">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 group-hover:bg-amber-500/20 transition-colors">
+                              <Icon className="h-4 w-4" />
+                            </div>
+                            <span className="font-medium">{label}</span>
+                          </span>
+                          <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-50 group-hover:translate-x-0 transition-all" />
+                        </Link>
+                      </Button>
+                    ))}
+                  </>
+                )}
 
                 {onSettingsClick && (
                   <Button

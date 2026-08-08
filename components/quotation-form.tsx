@@ -35,7 +35,7 @@ const UNITS = ['ml', 'm²', 'm³', 'und', 'global', 'viaje', 'día', 'hora', 'kg
 
 export function QuotationForm() {
   const { saveQuotation } = useQuotations()
-  const { providerInfo, bankInfo, clientInfo, isLoaded } = useSettings()
+  const { providerInfo, bankInfo, clientInfo, isLoaded, signaturePath, hasSignature } = useSettings()
   const { success, error: notifError, loading, dismiss } = useNotification()  
 
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
@@ -66,11 +66,11 @@ export function QuotationForm() {
   useEffect(() => { setBankInfo(savedBank) }, [savedBank])
   useEffect(() => {
     if (isLoaded) {
-      setProvider(providerInfo)
+      setProvider({ ...providerInfo, signaturePath: signaturePath ?? undefined })
       setBankInfo(bankInfo)
       setClient(clientInfo)
     }
-  }, [isLoaded])
+  }, [isLoaded, signaturePath])
 
   const updateItem = (id: string, field: keyof LineItem, value: string | number) => {
     setItems(prev => prev.map(item => {
@@ -126,6 +126,10 @@ export function QuotationForm() {
   }
 
   const handleDownloadPdf = async () => {
+    if (!hasSignature) {
+      notifError('Falta tu firma', 'Ve a Configuración y agrega tu firma antes de generar el PDF')
+      return
+    }
     const loadingId = loading('Generando PDF...')
     try {
       await generatePdf('quotation-preview', `Cotizacion-${documentNumber}`)
@@ -160,6 +164,13 @@ export function QuotationForm() {
 
   return (
     <div className="space-y-6">
+      {isLoaded && !hasSignature && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm text-amber-800 dark:text-amber-200">
+          Aún no has agregado tu firma. Ve a{' '}
+          <a href="/settings" className="underline font-medium">Configuración</a>{' '}
+          para agregarla antes de generar tus documentos en PDF.
+        </div>
+      )}
       {/* Document Info */}
       <Card>
         <CardHeader>
