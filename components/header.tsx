@@ -93,25 +93,25 @@ export function Header({ onSettingsClick }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
+      <div className="container flex h-16 items-center justify-between gap-2 px-3 sm:px-6 lg:px-8">
 
         {/* Logo con gradiente */}
-        <Link href="/" className="group flex items-center gap-3 pl-8 transition-transform duration-200 hover:scale-[1.02]">
-          <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-primary transition-all duration-300 group-hover:shadow-blue-500/40 group-hover:scale-105">
-            <FileText className="h-5 w-5 text-white" />
+        <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-3 transition-transform duration-200 hover:scale-[1.02]">
+          <div className="relative flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-primary transition-all duration-300 group-hover:shadow-blue-500/40 group-hover:scale-105">
+            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
-          <div className="flex flex-col">
-            <span className="bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-xl font-bold tracking-tight text-transparent">
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-base sm:text-xl font-bold tracking-tight text-transparent">
               CotiFactura
             </span>
-            <span className="text-[11px] font-medium text-muted-foreground/80 tracking-wide">
+            <span className="hidden sm:block text-[11px] font-medium text-muted-foreground/80 tracking-wide">
               Cotizaciones & Cobros
             </span>
           </div>
         </Link>
 
-        <div className="flex items-center gap-3 pr-8">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-3">
           {/* Email visible en desktop con badge */}
           {user && (
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/50">
@@ -126,11 +126,11 @@ export function Header({ onSettingsClick }: HeaderProps) {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="relative h-10 w-10 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted hover:border-border transition-all duration-200"
+              className="relative h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted hover:border-border transition-all duration-200"
               aria-label="Cambiar tema"
             >
-              <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <Sun className="h-4 w-4 sm:h-5 sm:w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="absolute h-4 w-4 sm:h-5 sm:w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </Button>
 
           <Sheet>
@@ -138,12 +138,12 @@ export function Header({ onSettingsClick }: HeaderProps) {
               <Button 
                 variant="ghost" 
                 size="icon"
-                className="relative h-10 w-10 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted hover:border-border transition-all duration-200"
+                className="relative h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-xl border border-border/50 bg-muted/30 hover:bg-muted hover:border-border transition-all duration-200"
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-4 w-4 sm:h-5 sm:w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 border-l border-border/50 bg-background/95 backdrop-blur-xl p-0">
+            <SheetContent side="right" className="w-[85vw] max-w-80 sm:w-80 border-l border-border/50 bg-background/95 backdrop-blur-xl p-0 overflow-y-auto">
               {/* Header del menú */}
               <div className="p-6 border-b border-border/50 bg-gradient-to-br from-emerald-500/5 to-teal-500/5">
                 <div className="flex items-center gap-3">
