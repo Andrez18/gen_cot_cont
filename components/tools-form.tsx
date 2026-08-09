@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Plus, Trash2, FileDown, Wrench, Pencil, Check, X, Building2 } from 'lucide-react'
+import { Plus, Trash2, FileDown, Wrench, Pencil, Check, X, Building2, FileText } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -573,6 +573,10 @@ export function ToolsForm() {
         >
           {/* Header */}
           <div style={{ borderBottom: '2px solid #111', paddingBottom: 16, marginBottom: 28 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+              <FileText size={11} strokeWidth={2.5} color="#888" />
+              <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: '0.03em', color: '#888' }}>CotiFactura</span>
+            </div>
             <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Lista de Herramientas</h1>
             {obraName && (
               <p style={{ fontSize: 15, fontWeight: 600, color: '#333', margin: '4px 0 0' }}>{obraName}</p>
@@ -618,6 +622,17 @@ export function ToolsForm() {
               <span style={{ fontSize: 12, color: '#555', display: 'block', marginBottom: 4 }}>TOTAL HERRAMIENTAS</span>
               <span style={{ fontSize: 20, fontWeight: 700 }}>{formatCurrency(totalGeneral)}</span>
             </div>
+          </div>
+
+          {/* Pie de página con marca */}
+          <div style={{
+            marginTop: 22, paddingTop: 14, borderTop: '1px solid #e5e7eb',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          }}>
+            <FileText size={11} strokeWidth={2} color="#9ca3af" />
+            <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
+              Generado con CotiFactura
+            </span>
           </div>
         </div>
       </div>

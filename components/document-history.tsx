@@ -743,6 +743,10 @@ export function DocumentHistory() {
                 <div style={{ marginBottom: 28 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
                     <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+                        <FileText size={11} strokeWidth={2.5} color="#888" />
+                        <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: '0.03em', color: '#888' }}>CotiFactura</span>
+                      </div>
                       <h1 style={{ fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: '-0.02em', color: '#111' }}>
                         Lista de Herramientas
                       </h1>
@@ -802,6 +806,17 @@ export function DocumentHistory() {
                     <div style={{ fontSize: 10, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Total herramientas</div>
                     <div style={{ fontSize: 20, fontWeight: 800, color: '#111' }}>{formatCurrency(toolsPdfData.total)}</div>
                   </div>
+                </div>
+
+                {/* Pie de página con marca */}
+                <div style={{
+                  marginTop: 22, paddingTop: 14, borderTop: '1px solid #e5e7eb',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                }}>
+                  <FileText size={11} strokeWidth={2} color="#9ca3af" />
+                  <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
+                    Generado con CotiFactura
+                  </span>
                 </div>
               </div>
             )}
@@ -876,11 +891,17 @@ export function DocumentHistory() {
                             width: 30, height: 30, borderRadius: 8, background: 'rgba(255,255,255,0.18)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                           }}>
-                            <span style={{ fontSize: 15 }}>📊</span>
+                            <TrendingUp size={15} strokeWidth={2.25} />
                           </div>
-                          <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, letterSpacing: '-0.01em' }}>
-                            Informe de Gastos e Ingresos
-                          </h1>
+                          <div>
+                            <h1 style={{ fontSize: 19, fontWeight: 800, margin: 0, letterSpacing: '-0.01em', lineHeight: 1.25 }}>
+                              Informe de Gastos e Ingresos
+                            </h1>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3, opacity: 0.8 }}>
+                              <FileText size={10} strokeWidth={2.5} />
+                              <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: '0.03em' }}>CotiFactura</span>
+                            </div>
+                          </div>
                         </div>
                         <span style={{
                           display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '3px 10px',
@@ -1011,6 +1032,17 @@ export function DocumentHistory() {
                       </span>
                       <span style={{ fontSize: 22, fontWeight: 800, color: inf.balance >= 0 ? '#065f46' : '#991b1b' }}>
                         {formatCurrency(inf.balance)}
+                      </span>
+                    </div>
+
+                    {/* Pie de página con marca */}
+                    <div style={{
+                      marginTop: 24, paddingTop: 16, borderTop: '1px solid #e5e7eb',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    }}>
+                      <FileText size={11} strokeWidth={2} color="#9ca3af" />
+                      <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
+                        Generado con CotiFactura
                       </span>
                     </div>
                   </div>
