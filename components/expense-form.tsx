@@ -17,6 +17,22 @@ function hoy() {
   return new Date().toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' })
 }
 
+// Input type="date" trabaja en formato ISO (yyyy-mm-dd); el resto de la
+// app (informes, listas, PDF) usa dd/mm/yyyy, así que convertimos acá.
+function hoyISO() {
+  const d = new Date()
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function isoAFechaDisplay(iso: string) {
+  const [y, m, d] = iso.split('-')
+  if (!y || !m || !d) return hoy()
+  return `${d}/${m}/${y}`
+}
+
 // El bucket "expense-photos" es privado: uploadPhoto guarda un path con
 // prefijo "supabase-storage://expense-photos/..." en vez de una URL usable
 // directamente. Acá lo convertimos a una URL firmada para poder mostrarlo.
@@ -47,6 +63,7 @@ export function ExpenseForm() {
   const [monto, setMonto] = useState('')
   const [cat, setCat] = useState('')
   const [tipo, setTipo] = useState<TipoRegistro>('gasto')
+  const [fechaISO, setFechaISO] = useState(hoyISO())
   const [errDesc, setErrDesc] = useState(false)
   const [errMonto, setErrMonto] = useState(false)
   const [informeActual, setInformeActual] = useState<any | null>(null)
@@ -111,15 +128,16 @@ export function ExpenseForm() {
       }
     }
 
-    await addRecord({ descripcion: descripcion.trim(), monto: montoNum, cat, tipo, fecha: hoy(), foto_url })
+    await addRecord({ descripcion: descripcion.trim(), monto: montoNum, cat, tipo, fecha: isoAFechaDisplay(fechaISO), foto_url })
     setDesc(''); setMonto(''); setCat(''); setTipo('gasto')
+    setFechaISO(hoyISO())
     setFotoFile(null); setFotoPreview(null)
     setInformeActual(null)
     success(
       tipo === 'gasto' ? 'Gasto registrado' : 'Ingreso registrado',
       `${descripcion} — ${formatCurrency(montoNum)}`
     )
-  }, [descripcion, monto, cat, tipo, fotoFile, addRecord, uploadPhoto, success, notifError, warning, loading, dismiss])
+  }, [descripcion, monto, cat, tipo, fechaISO, fotoFile, addRecord, uploadPhoto, success, notifError, warning, loading, dismiss])
 
   const confirmarEliminar = useCallback(async () => {
     if (!registroAEliminar) return
@@ -258,6 +276,8 @@ export function ExpenseForm() {
                 <option value="gasto">Gasto</option>
                 <option value="ingreso">Ingreso</option>
               </select>
+              <input type="date" value={fechaISO} onChange={e => setFechaISO(e.target.value || hoyISO())}
+                style={{ ...inputStyle, width: '150px' }} />
 
               {/* Botón foto */}
               <label style={{ display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid #d1d5db', borderRadius: '6px', padding: '7px 10px', cursor: 'pointer', fontSize: '13px', color: fotoPreview ? '#065f46' : '#6b7280', background: fotoPreview ? '#f0fdf4' : '#fff', whiteSpace: 'nowrap' }}>
