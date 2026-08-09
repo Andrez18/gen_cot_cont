@@ -153,10 +153,10 @@ export function LandingPage() {
             }}
           />
 
-          <div className="relative max-w-3xl mx-auto px-6 pt-24 pb-16 md:pt-32 md:pb-24 text-center">
+          <div className="relative max-w-3xl mx-auto px-6 pt-16 pb-12 md:pt-20 md:pb-16 text-center">
             {/* Badge estilo pill, igual patron que "GRATIS · Reserva una demo" */}
             <div
-              className={`inline-flex items-center gap-2.5 rounded-full border border-white/[0.12] bg-white/[0.04] pl-1.5 pr-5 py-1.5 text-[13px] text-white/65 mb-9 transition-all duration-700 ease-out ${
+              className={`inline-flex items-center gap-2.5 rounded-full border border-white/[0.12] bg-white/[0.04] pl-1.5 pr-5 py-1.5 text-[13px] text-white/65 mb-6 transition-all duration-700 ease-out ${
                 mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
               }`}
             >
@@ -168,7 +168,7 @@ export function LandingPage() {
             </div>
 
             <h1
-              className={`text-[2.75rem] md:text-6xl lg:text-[4.25rem] font-bold tracking-[-0.03em] leading-[1.05] mb-7 text-white transition-all duration-700 ease-out delay-100 ${
+              className={`text-[2.75rem] md:text-6xl lg:text-[4.25rem] font-bold tracking-[-0.03em] leading-[1.05] mb-5 text-white transition-all duration-700 ease-out delay-100 ${
                 mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
               }`}
             >
@@ -178,7 +178,7 @@ export function LandingPage() {
             </h1>
 
             <p
-              className={`text-[17px] md:text-lg text-white/45 max-w-lg mx-auto mb-11 leading-[1.6] transition-all duration-700 ease-out delay-200 ${
+              className={`text-[17px] md:text-lg text-white/45 max-w-lg mx-auto mb-8 leading-[1.6] transition-all duration-700 ease-out delay-200 ${
                 mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
               }`}
             >
@@ -206,7 +206,7 @@ export function LandingPage() {
             </div>
 
             <div
-              className={`flex flex-wrap items-center justify-center gap-x-7 gap-y-2 mt-10 text-[12.5px] text-white/35 transition-all duration-700 ease-out delay-[400ms] ${
+              className={`flex flex-wrap items-center justify-center gap-x-7 gap-y-2 mt-7 text-[12.5px] text-white/35 transition-all duration-700 ease-out delay-[400ms] ${
                 mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
               }`}
             >
@@ -224,19 +224,24 @@ export function LandingPage() {
 
           {/* Preview card, como el screenshot "flotando" de Melon Mind */}
           <div
-            className={`relative max-w-4xl mx-auto px-6 pb-24 transition-all duration-[900ms] ease-out delay-500 ${
+            className={`relative max-w-4xl mx-auto px-6 pb-16 transition-all duration-[900ms] ease-out delay-500 ${
               mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
             }`}
           >
             <div className="rounded-[28px] border border-white/[0.08] bg-white text-black p-7 md:p-9 shadow-[0_0_100px_-25px_rgba(255,255,255,0.18)]">
-              <div className="flex items-center gap-2.5 mb-7">
-                <div className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-black">
-                  <FileText className="h-3.5 w-3.5 text-white" />
+              <div className="flex items-center justify-between gap-2.5 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-black">
+                    <FileText className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <span className="text-[14px] font-semibold tracking-[-0.01em]">CotiFactura</span>
                 </div>
-                <span className="text-[14px] font-semibold tracking-[-0.01em]">CotiFactura</span>
+                <span className="hidden sm:inline text-[11px] font-medium text-black/35 border border-black/[0.08] rounded-full px-2.5 py-1">
+                  Vista previa
+                </span>
               </div>
-              <div className="grid sm:grid-cols-3 gap-3.5">
-                {CORE_FEATURES.slice(0, 3).map(({ icon: Icon, title, desc }) => (
+              <div className="grid sm:grid-cols-2 gap-3.5">
+                {CORE_FEATURES.map(({ icon: Icon, title, desc }) => (
                   <div key={title} className="rounded-2xl border border-black/[0.08] p-5 bg-black/[0.015] hover:bg-black/[0.03] transition-colors duration-200">
                     <Icon className="h-5 w-5 mb-3.5 text-black/60" strokeWidth={1.75} />
                     <p className="text-[14px] font-semibold mb-1.5 tracking-[-0.01em]">{title}</p>
@@ -244,16 +249,27 @@ export function LandingPage() {
                   </div>
                 ))}
               </div>
+              <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-black/[0.06]">
+                {['Firma digital', 'PDF al instante', 'Multiplataforma'].map((chip) => (
+                  <span
+                    key={chip}
+                    className="inline-flex items-center gap-1.5 text-[12px] font-medium text-black/55 bg-black/[0.03] border border-black/[0.06] rounded-full px-3 py-1.5"
+                  >
+                    <Check className="h-3 w-3 text-black/40" />
+                    {chip}
+                  </span>
+                ))}
+              </div>
             </div>
           </div>
         </section>
 
         {/* Lo que nos define */}
-        <section className="border-t border-white/[0.08] py-24 px-6">
-          <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-10 md:gap-8">
+        <section className="border-t border-white/[0.08] py-16 px-6 bg-white/[0.015]">
+          <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-8 md:gap-7">
             {DEFINING_TRAITS.map(({ icon: Icon, title, desc }) => (
-              <div key={title}>
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-5">
+              <div key={title} className="group">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.04] border border-white/[0.08] mb-5 transition-colors duration-200 group-hover:bg-white/[0.08] group-hover:border-white/[0.16]">
                   <Icon className="h-5 w-5 text-white/80" strokeWidth={1.75} />
                 </div>
                 <h3 className="text-[17px] font-semibold mb-2.5 tracking-[-0.01em]">{title}</h3>
@@ -264,12 +280,12 @@ export function LandingPage() {
         </section>
 
         {/* Caracteristicas detalladas */}
-        <section id="caracteristicas" className="border-t border-white/[0.08] py-24 md:py-28 px-6">
+        <section id="caracteristicas" className="border-t border-white/[0.08] py-16 md:py-20 px-6">
           <div className="max-w-5xl mx-auto">
             <p className="text-[11.5px] font-semibold text-white/35 uppercase tracking-[0.14em] mb-3.5">
               Características
             </p>
-            <h2 className="text-[28px] md:text-4xl font-bold tracking-[-0.02em] mb-14">
+            <h2 className="text-[28px] md:text-4xl font-bold tracking-[-0.02em] mb-9">
               Todo lo que necesitas
             </h2>
 
@@ -293,7 +309,7 @@ export function LandingPage() {
         </section>
 
         {/* Multiplataforma */}
-        <section id="por-que" className="border-t border-white/[0.08] py-24 md:py-28 px-6">
+        <section id="por-que" className="border-t border-white/[0.08] py-16 md:py-20 px-6">
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-[11.5px] font-semibold text-white/35 uppercase tracking-[0.14em] mb-3.5">
               Multiplataforma
@@ -301,7 +317,7 @@ export function LandingPage() {
             <h2 className="text-[28px] md:text-4xl font-bold tracking-[-0.02em] mb-4">
               En la palma de tu mano
             </h2>
-            <p className="text-white/45 mb-14 max-w-md mx-auto leading-[1.65] text-[15px]">
+            <p className="text-white/45 mb-10 max-w-md mx-auto leading-[1.65] text-[15px]">
               Accede desde el celular, la tablet o el computador. Instalala como app y generá
               documentos donde estés.
             </p>
@@ -326,15 +342,21 @@ export function LandingPage() {
         </section>
 
         {/* Precio */}
-        <section id="precio" className="border-t border-white/[0.08] py-24 md:py-28 px-6">
-          <div className="max-w-md mx-auto text-center">
+        <section id="precio" className="relative overflow-hidden border-t border-white/[0.08] py-16 md:py-20 px-6">
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse 45% 60% at 50% 40%, rgba(255,255,255,0.05), transparent 70%)',
+            }}
+          />
+          <div className="relative max-w-md mx-auto text-center">
             <p className="text-[11.5px] font-semibold text-white/35 uppercase tracking-[0.14em] mb-3.5">
               Precio
             </p>
             <h2 className="text-[28px] md:text-4xl font-bold tracking-[-0.02em] mb-4">
               Un solo plan, sin letra chica
             </h2>
-            <p className="text-white/45 mb-11 leading-[1.65] text-[15px]">
+            <p className="text-white/45 mb-8 leading-[1.65] text-[15px]">
               Acceso completo a cotizaciones, cuentas de cobro, gastos e historial.
             </p>
 
@@ -376,12 +398,12 @@ export function LandingPage() {
         </section>
 
         {/* FAQ */}
-        <section id="preguntas" className="border-t border-white/[0.08] py-24 md:py-28 px-6">
+        <section id="preguntas" className="border-t border-white/[0.08] py-16 md:py-20 px-6">
           <div className="max-w-2xl mx-auto">
             <p className="text-[11.5px] font-semibold text-white/35 uppercase tracking-[0.14em] mb-3.5">
               Preguntas frecuentes
             </p>
-            <h2 className="text-[28px] md:text-4xl font-bold tracking-[-0.02em] mb-12">
+            <h2 className="text-[28px] md:text-4xl font-bold tracking-[-0.02em] mb-9">
               Resolvemos tus dudas
             </h2>
             <div className="flex flex-col divide-y divide-white/[0.08] border-t border-b border-white/[0.08]">
@@ -401,7 +423,7 @@ export function LandingPage() {
         </section>
 
         {/* CTA final */}
-        <section className="border-t border-white/[0.08] py-24 md:py-32 px-6">
+        <section className="border-t border-white/[0.08] py-16 md:py-20 px-6">
           <div className="max-w-md mx-auto text-center">
             <h2 className="text-[28px] md:text-4xl font-bold tracking-[-0.02em] mb-4">
               Empieza ahora
@@ -422,7 +444,7 @@ export function LandingPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/[0.08] py-9 px-6">
+      <footer className="border-t border-white/[0.08] py-7 px-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-[8px] bg-white">
