@@ -37,6 +37,14 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* Colores semánticos para gastos/ingresos (usados en components/expense-form.tsx
+     y el historial), definidos acá para que reaccionen al modo oscuro. */
+  --income-text: oklch(0.40 0.13 155);
+  --income-bg: oklch(0.96 0.05 155);
+  --expense-text: oklch(0.45 0.19 25);
+  --expense-bg: oklch(0.96 0.05 25);
+  --surface-hover: oklch(0.97 0.01 240);
 }
 
 .dark {
@@ -72,6 +80,12 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+
+  --income-text: oklch(0.75 0.15 155);
+  --income-bg: oklch(0.28 0.06 155);
+  --expense-text: oklch(0.72 0.18 25);
+  --expense-bg: oklch(0.30 0.08 25);
+  --surface-hover: oklch(0.24 0.02 250);
 }
 
 @theme inline {
@@ -113,6 +127,11 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-income-text: var(--income-text);
+  --color-income-bg: var(--income-bg);
+  --color-expense-text: var(--expense-text);
+  --color-expense-bg: var(--expense-bg);
+  --color-surface-hover: var(--surface-hover);
 }
 
 @layer base {

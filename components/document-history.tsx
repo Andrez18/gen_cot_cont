@@ -54,34 +54,34 @@ function mapInvoice(i: any): Invoice {
 
 function RegistroRow({ r, onVerFoto }: { r: any; onVerFoto: (url: string) => void }) {
   return (
-    <div style={{ padding: '10px 12px', borderBottom: '1px solid #f3f4f6', fontSize: '13px' }}>
+    <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--muted)', fontSize: '13px' }}>
       {/* Fila principal */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <span style={{
           width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
-          background: r.tipo === 'ingreso' ? '#10b981' : '#ef4444', display: 'inline-block',
+          background: r.tipo === 'ingreso' ? 'var(--income-text)' : 'var(--destructive)', display: 'inline-block',
         }} />
-        <span style={{ flex: 1, color: '#111827', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span style={{ flex: 1, color: 'var(--foreground)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {r.descripcion}
         </span>
         <span style={{
           fontWeight: 600, flexShrink: 0,
-          color: r.tipo === 'ingreso' ? '#065f46' : '#991b1b',
+          color: r.tipo === 'ingreso' ? 'var(--income-text)' : 'var(--expense-text)',
         }}>
           {r.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(r.monto)}
         </span>
       </div>
       {/* Fila secundaria: meta */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', paddingLeft: '15px' }}>
-        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{r.cat || '—'}</span>
-        <span style={{ fontSize: '11px', color: '#d1d5db' }}>·</span>
-        <span style={{ fontSize: '11px', color: '#9ca3af' }}>{r.fecha}</span>
+        <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{r.cat || '—'}</span>
+        <span style={{ fontSize: '11px', color: 'var(--border)' }}>·</span>
+        <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{r.fecha}</span>
         {r.foto_url && (
           <>
-            <span style={{ fontSize: '11px', color: '#d1d5db' }}>·</span>
+            <span style={{ fontSize: '11px', color: 'var(--border)' }}>·</span>
             <button
               onClick={() => onVerFoto(r.foto_url)}
-              style={{ background: 'none', border: '1px solid #d1d5db', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: '#6b7280' }}
+              style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--muted-foreground)' }}
             >
               <Image size={11} /> foto
             </button>
@@ -109,7 +109,7 @@ function InformeCard({
   const totalRegistros = informe.total_registros ?? informe.totalRegistros ?? 0
 
   return (
-    <Card className={enProgreso ? 'border-amber-200 bg-amber-50/40' : ''}>
+    <Card className={enProgreso ? 'border-amber-200 bg-amber-50/40 dark:border-amber-900/50 dark:bg-amber-950/20' : ''}>
       <CardContent className="p-4">
         {/* Header clickeable */}
         <div className="flex items-center justify-between cursor-pointer select-none" onClick={() => setExpanded(v => !v)}>
@@ -123,7 +123,7 @@ function InformeCard({
                   {enProgreso ? 'En progreso' : `Informe #${index}`}
                 </span>
                 {enProgreso && (
-                  <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                  <span className="text-xs bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
                     Pendiente de cerrar
                   </span>
                 )}
@@ -134,7 +134,7 @@ function InformeCard({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-bold" style={{ color: informe.balance >= 0 ? '#065f46' : '#991b1b' }}>
+            <span className="text-sm font-bold" style={{ color: informe.balance >= 0 ? 'var(--income-text)' : 'var(--expense-text)' }}>
               {formatCurrency(informe.balance)}
             </span>
             <Button
@@ -155,12 +155,12 @@ function InformeCard({
             {/* Tarjetas resumen */}
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: 'Ingresos', value: informe.ingresos, color: '#065f46', bg: '#f0fdf4' },
-                { label: 'Gastos',   value: informe.gastos,   color: '#991b1b', bg: '#fef2f2' },
-                { label: 'Balance',  value: informe.balance,  color: informe.balance >= 0 ? '#065f46' : '#991b1b', bg: '#f9fafb' },
+                { label: 'Ingresos', value: informe.ingresos, color: 'var(--income-text)', bg: 'var(--income-bg)' },
+                { label: 'Gastos',   value: informe.gastos,   color: 'var(--expense-text)', bg: 'var(--expense-bg)' },
+                { label: 'Balance',  value: informe.balance,  color: informe.balance >= 0 ? 'var(--income-text)' : 'var(--expense-text)', bg: 'var(--muted)' },
               ].map(c => (
                 <div key={c.label} style={{ background: c.bg, borderRadius: '6px', padding: '8px 10px' }}>
-                  <div style={{ fontSize: '10px', color: '#6b7280', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{c.label}</div>
+                  <div style={{ fontSize: '10px', color: 'var(--muted-foreground)', marginBottom: '2px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>{c.label}</div>
                   <div style={{ fontSize: '12px', fontWeight: 'bold', color: c.color }}>{formatCurrency(c.value)}</div>
                 </div>
               ))}
@@ -174,7 +174,7 @@ function InformeCard({
                   {Object.entries(gastosPorCat).map(([cat, total]) => (
                     <div key={cat} className="flex justify-between text-sm py-1 border-b border-border/40 last:border-0">
                       <span className="text-muted-foreground">{cat}</span>
-                      <span style={{ color: '#991b1b' }}>{formatCurrency(total as number)}</span>
+                      <span style={{ color: 'var(--expense-text)' }}>{formatCurrency(total as number)}</span>
                     </div>
                   ))}
                 </div>
@@ -192,7 +192,7 @@ function InformeCard({
                   {verRegistros ? 'Ocultar registros' : `Ver ${registros.length} registros`}
                 </button>
                 {verRegistros && (
-                  <div style={{ border: '1px solid #e5e7eb', borderRadius: '6px', overflow: 'hidden' }}>
+                  <div style={{ border: '1px solid var(--border)', borderRadius: '6px', overflow: 'hidden' }}>
                     {registros.map(r => (
                       <RegistroRow key={r.id} r={r} onVerFoto={onVerFoto} />
                     ))}
@@ -209,7 +209,7 @@ function InformeCard({
 
 function GastosTab({ onVerFoto, onVerPdf }: { onVerFoto: (url: string) => void; onVerPdf: (informe: any, registros: any[], index: number, enProgreso?: boolean) => void }) {
   const { records: registros, isLoaded: regLoaded } = useExpenseRecords()
-  const { reports: informes, isLoaded: infLoaded } = useExpenseReports()
+  const { reports: informes, isLoaded: infLoaded, hasMore, isLoadingMore, loadMore } = useExpenseReports()
 
   if (!regLoaded || !infLoaded) {
     return <div className="py-8 text-center text-muted-foreground text-sm animate-pulse">Cargando...</div>
@@ -275,6 +275,13 @@ function GastosTab({ onVerFoto, onVerPdf }: { onVerFoto: (url: string) => void; 
           ))}
         </>
       )}
+      {hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" size="sm" onClick={loadMore} disabled={isLoadingMore}>
+            {isLoadingMore ? 'Cargando...' : 'Cargar más informes'}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
@@ -284,7 +291,7 @@ function HerramientasTab({
 }: {
   onVerPdf: (tools: any[], total: number, obraName?: string) => void
 }) {
-  const { tools, isLoaded } = useTools()
+  const { tools, isLoaded, hasMore, isLoadingMore, loadMore } = useTools()
   const [searchTerm, setSearchTerm] = useState('')
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
 
@@ -399,13 +406,20 @@ function HerramientasTab({
           })}
         </div>
       )}
+      {!searchTerm && hasMore && (
+        <div className="flex justify-center pt-2">
+          <Button variant="outline" size="sm" onClick={loadMore} disabled={isLoadingMore}>
+            {isLoadingMore ? 'Cargando...' : 'Cargar más herramientas'}
+          </Button>
+        </div>
+      )}
     </div>
   )
 }
 
 export function DocumentHistory() {
-  const { quotations, isLoaded: quotationsLoaded } = useQuotations()
-  const { invoices, isLoaded: invoicesLoaded } = useInvoices()
+  const { quotations, isLoaded: quotationsLoaded, hasMore: hasMoreQuotations, isLoadingMore: isLoadingMoreQuotations, loadMore: loadMoreQuotations } = useQuotations()
+  const { invoices, isLoaded: invoicesLoaded, hasMore: hasMoreInvoices, isLoadingMore: isLoadingMoreInvoices, loadMore: loadMoreInvoices } = useInvoices()
   const { generatePdf, isGenerating } = usePdfGenerator()
   const { generateExpensePdf, isGenerating: isGeneratingInforme, imageProgress } = useExpensePdfGenerator()
   const { success, error: notifError, warning } = useNotification()
@@ -551,6 +565,13 @@ export function DocumentHistory() {
               ))}
             </div>
           )}
+          {!searchTerm && hasMoreQuotations && (
+            <div className="flex justify-center pt-2">
+              <Button variant="outline" size="sm" onClick={loadMoreQuotations} disabled={isLoadingMoreQuotations}>
+                {isLoadingMoreQuotations ? 'Cargando...' : 'Cargar más'}
+              </Button>
+            </div>
+          )}
         </TabsContent>
 
         {/* Cuentas de cobro */}
@@ -591,6 +612,13 @@ export function DocumentHistory() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+          {!searchTerm && hasMoreInvoices && (
+            <div className="flex justify-center pt-2">
+              <Button variant="outline" size="sm" onClick={loadMoreInvoices} disabled={isLoadingMoreInvoices}>
+                {isLoadingMoreInvoices ? 'Cargando...' : 'Cargar más'}
+              </Button>
             </div>
           )}
         </TabsContent>
@@ -660,7 +688,7 @@ export function DocumentHistory() {
                   href={fotoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ fontSize: '13px', color: '#6b7280', textDecoration: 'underline' }}
+                  style={{ fontSize: '13px', color: 'var(--muted-foreground)', textDecoration: 'underline' }}
                 >
                   Abrir en nueva pestaña
                 </a>

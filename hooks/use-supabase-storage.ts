@@ -7,6 +7,11 @@ import { supabase } from '@/lib/supabase'
    TIPOS
 ========================= */
 
+// Tamaño de página para las consultas paginadas (historial de
+// cotizaciones, cuentas, informes de gastos y herramientas). Evita traer
+// toda la tabla de una sola vez a medida que crece con el uso.
+const PAGE_SIZE = 20
+
 export interface Tool {
   id: string
   user_id: string
@@ -28,17 +33,34 @@ export interface Tool {
 export function useQuotations() {
   const [quotations, setQuotations] = useState<any[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-  useEffect(() => {
-    supabase
+  const fetchPage = useCallback(async (offset: number) => {
+    const { data } = await supabase
       .from('quotations')
       .select('*')
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) setQuotations(data)
-        setIsLoaded(true)
-      })
+      .range(offset, offset + PAGE_SIZE - 1)
+    return data ?? []
   }, [])
+
+  useEffect(() => {
+    fetchPage(0).then(data => {
+      setQuotations(data)
+      setHasMore(data.length === PAGE_SIZE)
+      setIsLoaded(true)
+    })
+  }, [fetchPage])
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return
+    setIsLoadingMore(true)
+    const data = await fetchPage(quotations.length)
+    setQuotations(prev => [...prev, ...data])
+    setHasMore(data.length === PAGE_SIZE)
+    setIsLoadingMore(false)
+  }, [fetchPage, quotations.length, hasMore, isLoadingMore])
 
   const saveQuotation = useCallback(async (q: any) => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -69,7 +91,7 @@ export function useQuotations() {
     return { data, error }
   }, [])
 
-  return { quotations, saveQuotation, isLoaded }
+  return { quotations, saveQuotation, isLoaded, hasMore, isLoadingMore, loadMore }
 }
 
 /* =========================
@@ -79,17 +101,34 @@ export function useQuotations() {
 export function useInvoices() {
   const [invoices, setInvoices] = useState<any[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-  useEffect(() => {
-    supabase
+  const fetchPage = useCallback(async (offset: number) => {
+    const { data } = await supabase
       .from('invoices')
       .select('*')
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) setInvoices(data)
-        setIsLoaded(true)
-      })
+      .range(offset, offset + PAGE_SIZE - 1)
+    return data ?? []
   }, [])
+
+  useEffect(() => {
+    fetchPage(0).then(data => {
+      setInvoices(data)
+      setHasMore(data.length === PAGE_SIZE)
+      setIsLoaded(true)
+    })
+  }, [fetchPage])
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return
+    setIsLoadingMore(true)
+    const data = await fetchPage(invoices.length)
+    setInvoices(prev => [...prev, ...data])
+    setHasMore(data.length === PAGE_SIZE)
+    setIsLoadingMore(false)
+  }, [fetchPage, invoices.length, hasMore, isLoadingMore])
 
   const saveInvoice = useCallback(async (inv: any) => {
     const { data: { user } } = await supabase.auth.getUser()
@@ -119,7 +158,7 @@ export function useInvoices() {
     return { data, error }
   }, [])
 
-  return { invoices, saveInvoice, isLoaded }
+  return { invoices, saveInvoice, isLoaded, hasMore, isLoadingMore, loadMore }
 }
 
 /* =========================
@@ -202,17 +241,34 @@ export function useExpenseRecords() {
 export function useExpenseReports() {
   const [reports, setReports] = useState<any[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-  useEffect(() => {
-    supabase
+  const fetchPage = useCallback(async (offset: number) => {
+    const { data } = await supabase
       .from('expense_reports')
       .select('*, expense_records(*)')
       .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) setReports(data)
-        setIsLoaded(true)
-      })
+      .range(offset, offset + PAGE_SIZE - 1)
+    return data ?? []
   }, [])
+
+  useEffect(() => {
+    fetchPage(0).then(data => {
+      setReports(data)
+      setHasMore(data.length === PAGE_SIZE)
+      setIsLoaded(true)
+    })
+  }, [fetchPage])
+
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return
+    setIsLoadingMore(true)
+    const data = await fetchPage(reports.length)
+    setReports(prev => [...prev, ...data])
+    setHasMore(data.length === PAGE_SIZE)
+    setIsLoadingMore(false)
+  }, [fetchPage, reports.length, hasMore, isLoadingMore])
 
   const saveReport = useCallback(async (report: {
     fecha: string
@@ -238,7 +294,7 @@ export function useExpenseReports() {
     return { data, error }
   }, [])
 
-  return { reports, saveReport, isLoaded }
+  return { reports, saveReport, isLoaded, hasMore, isLoadingMore, loadMore }
 }
 
 /* =========================
@@ -344,34 +400,45 @@ export function usePaymentProofUpload() {
 export function useTools(obraName?: string | null) {
   const [tools, setTools] = useState<Tool[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  const fetchPage = useCallback(async (offset: number) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return []
+
+    let query = supabase
+      .from('tools')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1)
+
+    if (obraName) {
+      query = query.eq('obra_nombre', obraName)
+    }
+
+    const { data } = await query
+    return data ?? []
+  }, [obraName])
 
   useEffect(() => {
     setIsLoaded(false)
-    const loadTools = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setIsLoaded(true)
-        return
-      }
-
-      let query = supabase
-        .from('tools')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (obraName) {
-        query = query.eq('obra_nombre', obraName)
-      }
-
-      const { data } = await query
-
-      if (data) setTools(data)
+    fetchPage(0).then(data => {
+      setTools(data)
+      setHasMore(data.length === PAGE_SIZE)
       setIsLoaded(true)
-    }
+    })
+  }, [fetchPage])
 
-    loadTools()
-  }, [obraName])
+  const loadMore = useCallback(async () => {
+    if (isLoadingMore || !hasMore) return
+    setIsLoadingMore(true)
+    const data = await fetchPage(tools.length)
+    setTools(prev => [...prev, ...data])
+    setHasMore(data.length === PAGE_SIZE)
+    setIsLoadingMore(false)
+  }, [fetchPage, tools.length, hasMore, isLoadingMore])
 
   const addTool = useCallback(async (tool: {
     nombre: string
@@ -441,5 +508,8 @@ export function useTools(obraName?: string | null) {
     updateTool,
     deleteTool,
     isLoaded,
+    hasMore,
+    isLoadingMore,
+    loadMore,
   }
 }
