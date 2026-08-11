@@ -1,18 +1,16 @@
-'use client'
+import { Header } from '@/components/header'
+import { HomeDashboard } from '@/components/home-dashboard'
 
-// La ruta "/" ya no muestra una pantalla de inicio propia.
-// AuthGuard (components/auth-guard.tsx) se encarga de:
-//  - Mostrar la landing publica (components/landing-page.tsx) si no hay sesion.
-//  - Redirigir automaticamente a /quotation/new si ya hay sesion.
-// Este componente solo actua como respaldo minimo mientras eso ocurre.
 export default function HomePage() {
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex',
-      alignItems: 'center', justifyContent: 'center',
-      fontFamily: 'Arial', color: '#6b7280', fontSize: '14px',
-    }}>
-      Cargando...
+    <div className="min-h-screen flex flex-col bg-background">
+      <Header />
+
+      <main className="flex-1 container px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <HomeDashboard />
+        </div>
+      </main>
     </div>
   )
 }

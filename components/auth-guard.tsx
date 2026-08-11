@@ -1,12 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/use-auth'
 import { LandingPage } from './landing-page'
-
-// Ruta a la que se manda a un usuario ya logueado cuando cae en "/"
-const DEFAULT_APP_ROUTE = '/quotation/new'
 
 function LoadingScreen() {
   return (
@@ -22,16 +17,6 @@ function LoadingScreen() {
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useAuth()
-  const pathname = usePathname()
-  const router = useRouter()
-
-  // Si el usuario ya inicio sesion y aterriza en "/", lo mandamos directo
-  // a la app (ya no existe una pantalla de "inicio" intermedia).
-  useEffect(() => {
-    if (isLoaded && user && pathname === '/') {
-      router.replace(DEFAULT_APP_ROUTE)
-    }
-  }, [isLoaded, user, pathname, router])
 
   if (!isLoaded) {
     return <LoadingScreen />
@@ -43,10 +28,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return <LandingPage />
   }
 
-  // Con sesion, en "/": pantalla de carga mientras se redirige a la app.
-  if (pathname === '/') {
-    return <LoadingScreen />
-  }
-
+  // Con sesion: "/" ahora muestra un panel de inicio propio (ver
+  // components/home-dashboard.tsx); el resto de rutas siguen normal.
   return <>{children}</>
 }

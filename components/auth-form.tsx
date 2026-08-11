@@ -11,6 +11,7 @@ interface AuthFormProps {
 
 export function AuthForm({ variant = 'page' }: AuthFormProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -19,6 +20,10 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
   const handleSubmit = async () => {
     if (!email || !password) {
       notifError('Campos incompletos', 'Ingresá tu email y contraseña')
+      return
+    }
+    if (mode === 'register' && !fullName.trim()) {
+      notifError('Falta tu nombre', 'Ingresá tu nombre completo para crear la cuenta')
       return
     }
     if (password.length < 6) {
@@ -40,7 +45,22 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
         success('Bienvenido', email)
       }
     } else {
-      const { error } = await supabase.auth.signUp({ email, password })
+      const name = fullName.trim()
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { full_name: name } },
+      })
+      // Si ya hay sesión activa (confirmación de email deshabilitada), guardamos
+      // el nombre en user_settings de una vez para que el dashboard lo muestre.
+      if (!error && data.session && data.user) {
+        await supabase
+          .from('user_settings')
+          .upsert(
+            { user_id: data.user.id, provider_info: { name } },
+            { onConflict: 'user_id' },
+          )
+      }
       dismiss(loadingId)
       if (error) {
         notifError('Error al registrarse', error.message)
@@ -120,6 +140,21 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
 
         {/* Formulario */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {mode === 'register' && (
+            <div>
+              <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '6px' }}>
+                Nombre completo
+              </label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSubmit()}
+                placeholder="Ej: Felipe Gómez"
+                style={inputStyle}
+              />
+            </div>
+          )}
           <div>
             <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '6px' }}>
               Email

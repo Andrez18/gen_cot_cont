@@ -40,6 +40,13 @@ export function useSettings() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setIsLoaded(true); return }
 
+      // Nombre ingresado al registrarse (auth.users.user_metadata), usado como
+      // valor inicial mientras el usuario no haya guardado su propia configuración.
+      const metadataName = (user.user_metadata?.full_name as string | undefined)?.trim()
+      if (metadataName) {
+        setProviderInfo(prev => ({ ...prev, name: metadataName }))
+      }
+
       const { data } = await supabase
         .from('user_settings')
         .select('*')
