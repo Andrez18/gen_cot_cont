@@ -51,8 +51,7 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
         password,
         options: { data: { full_name: name } },
       })
-      // Si ya hay sesión activa (confirmación de email deshabilitada), guardamos
-      // el nombre en user_settings de una vez para que el dashboard lo muestre.
+      
       if (!error && data.session && data.user) {
         await supabase
           .from('user_settings')
@@ -65,7 +64,7 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
       if (error) {
         notifError('Error al registrarse', error.message)
       } else {
-        success('Cuenta creada', 'Revisá tu email para confirmar tu cuenta')
+        success('Cuenta creada', 'Revisa tu email para confirmar tu cuenta')
       }
     }
 
@@ -74,51 +73,50 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
-    border: '1px solid #e5e7eb',
+    border: 'none',
     borderRadius: '8px',
     padding: '10px 14px',
     fontSize: '14px',
-    color: '#111827',
-    background: '#fff',
-    fontFamily: 'Arial, sans-serif',
+    color: '#e4e2e5',
+    background: '#202022',
+    fontFamily: 'DM Sans, sans-serif',
     outline: 'none',
     boxSizing: 'border-box',
   }
 
   const card = (
       <div style={{
-        background: '#fff',
-        borderRadius: '16px',
-        padding: '40px',
+        background: '#000000',
+        borderRadius: '24px',
+        padding: '90px',
         width: '100%',
-        maxWidth: '400px',
-        boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
-        border: '1px solid #e5e7eb',
-        fontFamily: 'Arial, sans-serif',
+        maxWidth: '800px',
+        border: '1px solid #17171a',
+        fontFamily: 'DM Sans, sans-serif',
       }}>
         {/* Logo / título */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '48px', height: '48px', borderRadius: '12px',
-            background: '#111827', margin: '0 auto 12px',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '22px',
-          }}>
-            📄
-          </div>
-          <h1 style={{ fontSize: '20px', fontWeight: 'bold', margin: 0, color: '#111827' }}>
-            CotiFactura
+        <div style={{ textAlign: 'left', marginBottom: '32px' }}>
+          <h1 style={{ fontSize: '20px', fontWeight: 'medium', margin: 0, color: '#e4e2e5', display: 'flex', gap: '4px', alignItems: 'center' }}>
+            <svg xmlns="http://w3.org" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+              <polyline points="10 9 9 9 8 9"></polyline>
+            </svg>
+             CotiFactura
           </h1>
           <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>
-            {mode === 'login' ? 'Iniciá sesión en tu cuenta' : 'Creá tu cuenta gratis'}
+            {mode === 'login' ? 'Inicia sesión en tu cuenta' : 'Crea tu cuenta gratis'}
           </p>
         </div>
 
         {/* Tabs */}
         <div style={{
           display: 'grid', gridTemplateColumns: '1fr 1fr',
-          background: '#f3f4f6', borderRadius: '8px',
+          background: '#0a0a0a', borderRadius: '8px',
           padding: '4px', marginBottom: '24px', gap: '4px',
+          border: '1px solid #17171a',
         }}>
           {(['login', 'register'] as const).map(m => (
             <button
@@ -126,9 +124,9 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
               onClick={() => setMode(m)}
               style={{
                 padding: '8px', border: 'none', borderRadius: '6px', cursor: 'pointer',
-                fontSize: '13px', fontWeight: 600, fontFamily: 'Arial',
-                background: mode === m ? '#fff' : 'transparent',
-                color: mode === m ? '#111827' : '#6b7280',
+                fontSize: '14px', fontWeight: 500, fontFamily: 'DM Sans',
+                background: mode === m ? '#17171a' : 'transparent',
+                color: mode === m ? '#e4e2e5' : '#6b7280',
                 boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
                 transition: 'all 0.15s ease',
               }}
@@ -150,21 +148,21 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-                placeholder="Ej: Felipe Gómez"
+                placeholder="Ej: Persona de Ejemplo"
                 style={inputStyle}
               />
             </div>
           )}
           <div>
             <label style={{ fontSize: '13px', fontWeight: 600, color: '#374151', display: 'block', marginBottom: '6px' }}>
-              Email
+              Correo
             </label>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              placeholder="tu@email.com"
+              placeholder="Escribe tu correo"
               style={inputStyle}
             />
           </div>
@@ -177,7 +175,7 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
               value={password}
               onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSubmit()}
-              placeholder="••••••••"
+              placeholder="Escoge una contraseña"
               style={inputStyle}
             />
             {mode === 'register' && (
@@ -192,10 +190,10 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
             disabled={isLoading}
             style={{
               width: '100%', padding: '11px', border: 'none', borderRadius: '8px',
-              background: isLoading ? '#9ca3af' : '#111827',
-              color: '#fff', fontSize: '14px', fontWeight: 'bold',
+              background: isLoading ? '#fafafa' : '#fafafa',
+              color: '#0a0a0a', fontSize: '14px', fontWeight: 'medium',
               cursor: isLoading ? 'not-allowed' : 'pointer',
-              fontFamily: 'Arial', marginTop: '4px',
+              fontFamily: 'DM Sans', marginTop: '4px',
               transition: 'background 0.15s ease',
             }}
           >
@@ -207,12 +205,12 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
 
         {/* Footer */}
         <p style={{ textAlign: 'center', fontSize: '12px', color: '#9ca3af', marginTop: '20px' }}>
-          {mode === 'login' ? '¿No tenés cuenta? ' : '¿Ya tenés cuenta? '}
+          {mode === 'login' ? '¿No tienes cuenta? ' : '¿Ya tienes cuenta? '}
           <button
             onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
-            style={{ background: 'none', border: 'none', color: '#111827', fontWeight: 600, cursor: 'pointer', fontSize: '12px', fontFamily: 'Arial' }}
+            style={{ background: 'none', border: 'none', color: '#fafafa', fontWeight: 600, cursor: 'pointer', fontSize: '12px', fontFamily: 'Arial' }}
           >
-            {mode === 'login' ? 'Registrate' : 'Iniciá sesión'}
+            {mode === 'login' ? 'Registrate' : 'Inicia sesión'}
           </button>
         </p>
       </div>

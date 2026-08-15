@@ -87,8 +87,8 @@ export function HomeDashboard() {
 
   const firstName = (displayName || user?.email || '').split(/\s|@/)[0]
 
-  return (
-    <div className="space-y-6">
+  return (  
+    <div className="space-y-6 font-[--dm-sans">
       {/* Bienvenida */}
       <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-card to-card p-6 sm:p-8">
         <div
@@ -107,13 +107,6 @@ export function HomeDashboard() {
           ) : (
             <Skeleton className="h-8 w-56" />
           )}
-          <div className="mt-1 text-sm text-muted-foreground">
-            {isLoaded && displayName
-              ? `Registrado como ${displayName}`
-              : isLoaded
-                ? `Registrado con ${user?.email}`
-                : <Skeleton className="h-4 w-40" />}
-          </div>
         </div>
       </div>
 
