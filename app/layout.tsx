@@ -65,8 +65,10 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="description" content="Genera cotizaciones y cuentas de cobro profesionales de forma rápida y sencilla" />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
-      <body className="font-sans antialiased min-h-screen">
+      <body className="antialiased min-h-screen">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <SwRegister />
           <NotificationProvider>

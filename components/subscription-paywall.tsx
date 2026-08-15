@@ -4,10 +4,6 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/use-auth'
 import { usePaymentProofUpload } from '@/hooks/use-supabase-storage'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2, Lock, Clock, Copy, Check, Camera, X, Tag } from 'lucide-react'
 
 const NEQUI_NUMBER = process.env.NEXT_PUBLIC_NEQUI_NUMBER ?? '300 000 0000'
@@ -130,28 +126,33 @@ export function SubscriptionPaywall({
 
   if (status === 'pending') {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <Card className="max-w-md w-full">
-          <CardHeader>
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Clock className="h-4 w-4" />
-              <span className="text-xs">Pago en revisión</span>
-            </div>
-            <CardTitle>Estamos confirmando tu pago</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Ya recibimos tu comprobante. En cuanto se confirme la transferencia
-              en Nequi, tu suscripción se activa automáticamente.
-            </p>
-            <button
-              onClick={() => signOut()}
-              className="text-xs text-muted-foreground underline w-full text-center"
-            >
-              Cerrar sesión
-            </button>
-          </CardContent>
-        </Card>
+      <div
+        className="min-h-screen flex items-center justify-center p-6 bg-black text-white antialiased relative overflow-hidden"
+        style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background: 'radial-gradient(ellipse 55% 40% at 50% 15%, rgba(255,255,255,0.06), transparent 70%)',
+          }}
+        />
+        <div className="relative max-w-md w-full rounded-3xl border border-white/8 bg-white/3 p-8">
+          <div className="flex items-center gap-2 text-white/40 mb-3">
+            <Clock className="h-4 w-4" />
+            <span className="text-[12.5px] uppercase tracking-[0.1em]">Pago en revisión</span>
+          </div>
+          <h2 className="text-2xl font-light tracking-[-0.02em] mb-5">Estamos confirmando tu pago</h2>
+          <p className="text-[14px] text-white/45 leading-[1.65] mb-8">
+            Ya recibimos tu comprobante. En cuanto se confirme la transferencia
+            en Nequi, tu suscripción se activa automáticamente.
+          </p>
+          <button
+            onClick={() => signOut()}
+            className="text-[12.5px] text-white/35 hover:text-white/60 underline underline-offset-4 w-full text-center transition-colors"
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </div>
     )
   }
@@ -160,29 +161,44 @@ export function SubscriptionPaywall({
   const busy = submitting || isUploading
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <Card className="max-w-md w-full">
-        <CardHeader>
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <Lock className="h-4 w-4" />
-            <span className="text-xs">Acceso restringido</span>
-          </div>
-          <CardTitle>Activa tu suscripción mensual</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="rounded-lg border p-4 space-y-2">
-            <p className="text-sm text-muted-foreground">Transfiere por Nequi</p>
+    <div
+      className="min-h-screen flex items-center justify-center p-6 bg-black text-white antialiased relative overflow-hidden"
+      style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}
+    >
+      {/* Glow radial de fondo, mismo patrón que el hero */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse 55% 40% at 50% 15%, rgba(255,255,255,0.06), transparent 70%)',
+        }}
+      />
+
+      <div className="relative max-w-md w-full rounded-3xl border border-white/8 bg-white/3 p-8">
+        <div className="flex items-center gap-2 text-white/40 mb-3">
+          <Lock className="h-4 w-4" />
+          <span className="text-[12.5px] uppercase tracking-[0.1em]">Acceso restringido</span>
+        </div>
+        <h2 className="text-2xl font-light tracking-[-0.02em] mb-6">Activa tu suscripción mensual</h2>
+
+        <div className="space-y-5">
+          {/* Datos Nequi */}
+          <div className="rounded-2xl border border-white/8 bg-white/[0.03] p-4 space-y-2.5">
+            <p className="text-[12.5px] text-white/40">Transfiere por Nequi</p>
             <div className="flex items-center justify-between">
-              <span className="text-lg font-semibold">{NEQUI_NUMBER}</span>
-              <Button variant="ghost" size="sm" onClick={copyNumber}>
-                {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </Button>
+              <span className="text-lg font-semibold tracking-[-0.01em]">{NEQUI_NUMBER}</span>
+              <button
+                onClick={copyNumber}
+                className="flex items-center justify-center h-8 w-8 rounded-full border border-white/[0.14] bg-white/4 hover:bg-white/[0.09] hover:border-white/20 transition-all duration-200"
+                aria-label="Copiar número"
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              </button>
             </div>
-            <p className="text-sm text-muted-foreground">A nombre de {NEQUI_HOLDER}</p>
-            <p className="text-sm font-medium">
+            <p className="text-[13px] text-white/40">A nombre de {NEQUI_HOLDER}</p>
+            <p className="text-[14px] font-medium text-white/80">
               Monto: ${displayedPrice.toLocaleString('es-CO')} COP
               {discount && (
-                <span className="ml-2 text-xs text-muted-foreground line-through">
+                <span className="ml-2 text-[12px] text-white/30 line-through">
                   ${Number(PRICE_COP).toLocaleString('es-CO')}
                 </span>
               )}
@@ -191,56 +207,72 @@ export function SubscriptionPaywall({
 
           {/* Código de descuento */}
           <div className="space-y-2">
-            <Label htmlFor="discount">¿Tienes un código de descuento?</Label>
+            <label htmlFor="discount" className="block text-[13px] text-white/50">
+              ¿Tienes un código de descuento?
+            </label>
             {discount ? (
-              <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm bg-muted/30">
-                <span className="flex items-center gap-2">
-                  <Tag className="h-4 w-4" /> {discount.code} aplicado
+              <div className="flex items-center justify-between rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px]">
+                <span className="flex items-center gap-2 text-white/70">
+                  <Tag className="h-3.5 w-3.5 text-white/40" /> {discount.code} aplicado
                 </span>
-                <button onClick={removeDiscount} className="text-muted-foreground hover:text-destructive">
+                <button onClick={removeDiscount} className="text-white/35 hover:text-white/70 transition-colors">
                   <X className="h-4 w-4" />
                 </button>
               </div>
             ) : (
               <div className="flex gap-2">
-                <Input
+                <input
                   id="discount"
                   value={discountInput}
                   onChange={(e) => setDiscountInput(e.target.value.toUpperCase())}
                   placeholder="Ej: BIENVENIDA10"
+                  className="flex-1 rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-white placeholder:text-white/25 outline-none focus:border-white/20 transition-colors"
                 />
-                <Button variant="outline" onClick={applyDiscountCode} disabled={applyingDiscount || !discountInput.trim()}>
-                  {applyingDiscount ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Aplicar'}
-                </Button>
+                <button
+                  onClick={applyDiscountCode}
+                  disabled={applyingDiscount || !discountInput.trim()}
+                  className="rounded-xl border border-white/[0.14] bg-white/4 px-4 py-2.5 text-[13.5px] font-medium text-white hover:bg-white/[0.09] hover:border-white/20 active:scale-[0.98] transition-all duration-200 disabled:opacity-40 disabled:pointer-events-none"
+                >
+                  {applyingDiscount ? <Loader2 className="h-4 w-4 animate-spin mx-auto" /> : 'Aplicar'}
+                </button>
               </div>
             )}
-            {discountError && <p className="text-sm text-destructive">{discountError}</p>}
+            {discountError && <p className="text-[12.5px] text-red-400/80">{discountError}</p>}
           </div>
 
+          {/* Referencia */}
           <div className="space-y-2">
-            <Label htmlFor="reference">Número de referencia del comprobante</Label>
-            <Input
+            <label htmlFor="reference" className="block text-[13px] text-white/50">
+              Número de referencia del comprobante
+            </label>
+            <input
               id="reference"
               value={reference}
               onChange={(e) => setReference(e.target.value)}
               placeholder="Ej: M12345678"
+              className="w-full rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-2.5 text-[13.5px] text-white placeholder:text-white/25 outline-none focus:border-white/20 transition-colors"
             />
           </div>
 
+          {/* Comprobante */}
           <div className="space-y-2">
-            <Label>Foto del comprobante</Label>
+            <p className="text-[13px] text-white/50">Foto del comprobante</p>
             {proofPreview ? (
               <div className="flex items-center gap-3">
-                <img src={proofPreview} alt="comprobante" className="h-16 w-16 object-cover rounded-md border" />
+                <img
+                  src={proofPreview}
+                  alt="comprobante"
+                  className="h-16 w-16 object-cover rounded-xl border border-white/8"
+                />
                 <button
                   onClick={() => { setProofFile(null); setProofPreview(null) }}
-                  className="text-xs text-destructive underline"
+                  className="text-[12.5px] text-red-400/80 hover:text-red-400 underline underline-offset-4 transition-colors"
                 >
                   Quitar foto
                 </button>
               </div>
             ) : (
-              <label className="flex items-center justify-center gap-2 rounded-md border border-dashed p-4 text-sm text-muted-foreground cursor-pointer hover:bg-muted/40">
+              <label className="flex items-center justify-center gap-2 rounded-xl border border-dashed border-white/[0.14] p-4 text-[13.5px] text-white/40 cursor-pointer hover:bg-white/[0.03] hover:border-white/25 transition-all">
                 <Camera className="h-4 w-4" />
                 Adjuntar foto del comprobante
                 <input
@@ -252,26 +284,30 @@ export function SubscriptionPaywall({
                 />
               </label>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11.5px] text-white/30 leading-relaxed">
               El comprobante ayuda a confirmar tu pago más rápido y de forma segura.
             </p>
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
+          {error && <p className="text-[12.5px] text-red-400/80">{error}</p>}
 
-          <Button onClick={handleSubmit} disabled={busy} className="w-full">
-            {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+          <button
+            onClick={handleSubmit}
+            disabled={busy}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3.5 text-[14px] font-semibold text-black hover:bg-white/85 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             {busy ? 'Enviando...' : 'Ya pagué, confirmar'}
-          </Button>
+          </button>
 
           <button
             onClick={() => signOut()}
-            className="text-xs text-muted-foreground underline w-full text-center"
+            className="text-[12.5px] text-white/35 hover:text-white/60 underline underline-offset-4 w-full text-center transition-colors"
           >
             Cerrar sesión
           </button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

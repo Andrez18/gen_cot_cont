@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/hooks/use-auth'
 import { LandingPage } from './landing-page'
+import { usePathname } from 'next/navigation'
 
 function LoadingScreen() {
   return (
@@ -15,11 +16,26 @@ function LoadingScreen() {
   )
 }
 
+// Rutas públicas que no requieren autenticación
+const PUBLIC_ROUTES = [
+  '/politica-de-privacidad',
+  '/politica-de-uso-y-compra',
+  '/aviso-legal',
+  '/contacto',
+]
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useAuth()
+  const pathname = usePathname()
 
   if (!isLoaded) {
     return <LoadingScreen />
+  }
+
+  // Permitir acceso a rutas públicas sin autenticación
+  const isPublicRoute = PUBLIC_ROUTES.some(route => pathname.startsWith(route))
+  if (isPublicRoute) {
+    return <>{children}</>
   }
 
   // Sin sesion: mostramos la landing publica (con acceso a login/registro
