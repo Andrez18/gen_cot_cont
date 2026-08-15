@@ -88,12 +88,12 @@ export function HomeDashboard() {
   const firstName = (displayName || user?.email || '').split(/\s|@/)[0]
 
   return (  
-    <div className="space-y-6 font-[--dm-sans">
+    <div className="space-y-6">
       {/* Bienvenida */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-br from-primary/10 via-card to-card p-6 sm:p-8">
+      <div className="relative overflow-hidden rounded-3xl border border-border/70 dark:border-white/8 bg-card p-6 sm:p-8">
         <div
           className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full opacity-40 blur-3xl"
-          style={{ background: 'radial-gradient(circle, var(--accent), transparent 70%)' }}
+          style={{ background: 'radial-gradient(circle, var(--foreground), transparent 70%)' }}
         />
         <div className="relative flex flex-col gap-1">
           <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
@@ -101,7 +101,7 @@ export function HomeDashboard() {
             {getGreeting()}
           </span>
           {isLoaded ? (
-            <h1 className="text-2xl font-bold sm:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-[-0.02em] sm:text-3xl">
               {firstName ? `Hola, ${firstName}` : 'Hola de nuevo'}
             </h1>
           ) : (
@@ -117,30 +117,30 @@ export function HomeDashboard() {
           icon={TrendingDown}
           label="Total en gastos"
           value={isLoaded && stats ? formatCurrency(stats.totalGastos) : null}
-          accent="from-red-500/15 to-red-500/0 text-red-500"
+          accent="from-foreground/8 to-foreground/0 text-foreground"
         />
         <StatCard
           href="/history"
           icon={FileSpreadsheet}
           label="Cotizaciones"
           value={isLoaded && stats ? String(stats.cotizaciones) : null}
-          accent="from-blue-500/15 to-blue-500/0 text-blue-500"
+          accent="from-foreground/8 to-foreground/0 text-foreground"
         />
         <StatCard
           href="/history"
           icon={Receipt}
           label="Cuentas de cobro"
           value={isLoaded && stats ? String(stats.cuentas) : null}
-          accent="from-emerald-500/15 to-emerald-500/0 text-emerald-500"
+          accent="from-foreground/8 to-foreground/0 text-foreground"
         />
       </div>
 
       {/* Accesos rápidos */}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Card className="border-border/50">
+        <Card>
           <CardContent className="flex items-center justify-between gap-3 py-2">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
                 <Settings className="h-5 w-5" />
               </div>
               <div className="min-w-0">
@@ -158,10 +158,10 @@ export function HomeDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-border/50">
+        <Card>
           <CardContent className="flex items-center justify-between gap-3 py-2">
             <div className="flex items-center gap-3 min-w-0">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-muted">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted">
                 <PlusCircle className="h-5 w-5" />
               </div>
               <div className="min-w-0">
@@ -201,15 +201,15 @@ function StatCard({
 }) {
   return (
     <Link href={href}>
-      <Card className="border-border/50 transition-colors hover:bg-muted/40">
+      <Card className="transition-colors hover:bg-muted/40">
         <CardContent className="flex items-center gap-4 py-2">
-          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${accent}`}>
+          <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br ${accent}`}>
             <Icon className="h-5 w-5" />
           </div>
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
             {value !== null ? (
-              <p className="truncate text-lg font-bold">{value}</p>
+              <p className="truncate text-lg font-semibold tracking-[-0.01em]">{value}</p>
             ) : (
               <Skeleton className="mt-1 h-6 w-20" />
             )}

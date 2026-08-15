@@ -3,6 +3,13 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Header } from '@/components/header'
 import { SettingsForm } from '@/components/settings-form'
+import type { Metadata } from 'next'
+
+// Página privada (requiere sesión): no debe indexarse en buscadores.
+export const metadata: Metadata = {
+  title: 'Configuración',
+  robots: { index: false, follow: false },
+}
 
 export default function SettingsPage() {
   return (

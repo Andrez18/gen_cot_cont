@@ -1,5 +1,12 @@
 import { Header } from '@/components/header'
 import { InvoiceForm } from '@/components/invoice-form'
+import type { Metadata } from 'next'
+
+// Página privada (requiere sesión): no debe indexarse en buscadores.
+export const metadata: Metadata = {
+  title: 'Nueva cuenta de cobro',
+  robots: { index: false, follow: false },
+}
 
 export default function NewInvoicePage() {
   return (

@@ -97,12 +97,12 @@ export function Header({ onSettingsClick }: HeaderProps) {
 
         {/* Logo con gradiente */}
         <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-3 transition-transform duration-200 hover:scale-[1.02]">
-          <div className="relative flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl bg-primary transition-all duration-300 group-hover:shadow-blue-500/40 group-hover:scale-105">
+          <div className="relative flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-primary transition-all duration-300 group-hover:scale-105">
             <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
           <div className="flex min-w-0 flex-col">
-            <span className="truncate bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-base sm:text-xl font-bold tracking-tight text-transparent">
+            <span className="truncate text-base sm:text-xl font-semibold tracking-[-0.02em] text-foreground">
               CotiFactura
             </span>
             <span className="hidden sm:block text-[11px] font-medium text-muted-foreground/80 tracking-wide">
@@ -115,8 +115,8 @@ export function Header({ onSettingsClick }: HeaderProps) {
           {/* Email visible en desktop con badge */}
           {user && (
             <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border/50">
-              <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-xs font-medium text-muted-foreground max-w-[160px] truncate">
+              <div className="h-2 w-2 rounded-full bg-foreground/70 animate-pulse" />
+              <span className="text-xs font-medium text-muted-foreground max-w-40 truncate">
                 {user.email}
               </span>
             </div>
@@ -145,7 +145,7 @@ export function Header({ onSettingsClick }: HeaderProps) {
             </SheetTrigger>
             <SheetContent side="right" className="w-[85vw] max-w-80 sm:w-80 border-l border-border/50 bg-background/95 backdrop-blur-xl p-0 overflow-y-auto">
               {/* Header del menú */}
-              <div className="p-6 border-b border-border/50 bg-gradient-to-br from-emerald-500/5 to-teal-500/5">
+              <div className="p-6 border-b border-border/50 bg-accent/40">
                 <div className="flex items-center gap-3">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
                     <FileText className="h-6 w-6 text-white" />
@@ -163,12 +163,12 @@ export function Header({ onSettingsClick }: HeaderProps) {
                   <Button
                     key={href}
                     variant="ghost"
-                    className="group justify-between h-12 px-4 rounded-xl hover:bg-emerald-500/10 hover:text-blue-600transition-all duration-200"
+                    className="group justify-between h-12 px-4 rounded-2xl hover:bg-accent transition-all duration-200"
                     asChild
                   >
                     <Link href={href}>
                       <span className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 group-hover:bg-emerald-500/20 transition-colors">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/50 group-hover:bg-foreground/10 transition-colors">
                           <Icon className="h-4 w-4" />
                         </div>
                         <span className="font-medium">{label}</span>
@@ -183,11 +183,11 @@ export function Header({ onSettingsClick }: HeaderProps) {
                     <div className="my-2 mx-2 border-t border-border/50" />
                     <Button
                       variant="ghost"
-                      className="group justify-between h-12 px-4 rounded-xl hover:bg-emerald-500/10 hover:text-blue-600 transition-all duration-200"
+                      className="group justify-between h-12 px-4 rounded-2xl hover:bg-accent transition-all duration-200"
                       onClick={handleInstallClick}
                     >
                       <span className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 group-hover:bg-emerald-500/20 transition-colors">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/50 group-hover:bg-foreground/10 transition-colors">
                           <Download className="h-4 w-4" />
                         </div>
                         <span className="font-medium">Descargar app</span>
@@ -204,12 +204,12 @@ export function Header({ onSettingsClick }: HeaderProps) {
                       <Button
                         key={href}
                         variant="ghost"
-                        className="group justify-between h-12 px-4 rounded-xl hover:bg-amber-500/10 transition-all duration-200"
+                        className="group justify-between h-12 px-4 rounded-2xl hover:bg-accent transition-all duration-200"
                         asChild
                       >
                         <Link href={href}>
                           <span className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 group-hover:bg-amber-500/20 transition-colors">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/50 group-hover:bg-foreground/10 transition-colors">
                               <Icon className="h-4 w-4" />
                             </div>
                             <span className="font-medium">{label}</span>
@@ -224,11 +224,11 @@ export function Header({ onSettingsClick }: HeaderProps) {
                 {onSettingsClick && (
                   <Button
                     variant="ghost"
-                    className="group justify-between h-12 px-4 rounded-xl hover:bg-emerald-500/10 hover:text-blue-600 transition-all duration-200"
+                    className="group justify-between h-12 px-4 rounded-2xl hover:bg-accent transition-all duration-200"
                     onClick={onSettingsClick}
                   >
                     <span className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted/50 group-hover:bg-blue-500/20 transition-colors">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/50 group-hover:bg-foreground/10 transition-colors">
                         <Settings className="h-4 w-4" />
                       </div>
                       <span className="font-medium">Configuración</span>
@@ -245,7 +245,7 @@ export function Header({ onSettingsClick }: HeaderProps) {
                     {/* Card de usuario */}
                     <div className="mx-2 p-4 rounded-xl bg-muted/30 border border-border/50 mb-2">
                       <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-teal-600 text-white font-semibold text-sm">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground font-semibold text-sm">
                           {user.email?.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">

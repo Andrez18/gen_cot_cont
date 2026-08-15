@@ -23,13 +23,73 @@ const dmSans = DM_Sans({
   variable: "--font-dm-sans",
 })
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cotifactura.vercel.app'
+const SITE_NAME = 'CotiFactura'
+const SITE_DESCRIPTION =
+  'CotiFactura es la app para contratistas independientes en Colombia: genera cotizaciones, cuentas de cobro y controla tus gastos e ingresos, con firma digital y respaldo en la nube.'
+
 export const metadata: Metadata = {
-  title: 'CotiFactura - Cotizaciones y Cuentas de Cobro',
-  description: 'Genera cotizaciones y cuentas de cobro profesionales de forma rápida y sencilla',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: 'CotiFactura - Cotizaciones y Cuentas de Cobro para Contratistas',
+    template: '%s | CotiFactura',
+  },
+  description: SITE_DESCRIPTION,
   generator: 'v0.app',
+  applicationName: SITE_NAME,
   manifest: '/manifest.json',
-  keywords: ['cotización', 'cuenta de cobro', 'facturación', 'colombia', 'pdf'],
+  keywords: [
+    'CotiFactura',
+    'cotizaciones',
+    'cuentas de cobro',
+    'facturación para contratistas',
+    'contratistas independientes Colombia',
+    'generador de cotizaciones',
+    'cuenta de cobro PDF',
+    'control de gastos e ingresos',
+    'firma digital PDF',
+    'app para freelancers Colombia',
+  ],
   authors: [{ name: 'Jorge Vallejo' }],
+  creator: 'CotiFactura',
+  publisher: 'CotiFactura',
+  category: 'business',
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+      'max-video-preview': -1,
+    },
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'es_CO',
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    title: 'CotiFactura - Cotizaciones y Cuentas de Cobro para Contratistas',
+    description: SITE_DESCRIPTION,
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'CotiFactura - Cotizaciones y cuentas de cobro para contratistas independientes',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CotiFactura - Cotizaciones y Cuentas de Cobro para Contratistas',
+    description: SITE_DESCRIPTION,
+    images: ['/og-image.png'],
+  },
   icons: {
     icon: [
       { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
@@ -60,13 +120,53 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'SoftwareApplication',
+        name: 'CotiFactura',
+        url: SITE_URL,
+        description: SITE_DESCRIPTION,
+        applicationCategory: 'BusinessApplication',
+        operatingSystem: 'Web, iOS, Android',
+        offers: {
+          '@type': 'Offer',
+          price: process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_COP ?? '30000',
+          priceCurrency: 'COP',
+          priceValidUntil: `${new Date().getFullYear() + 1}-12-31`,
+        },
+        inLanguage: 'es-CO',
+        image: `${SITE_URL}/og-image.png`,
+      },
+      {
+        '@type': 'Organization',
+        name: 'CotiFactura',
+        url: SITE_URL,
+        logo: `${SITE_URL}/icon-512x512.png`,
+        email: 'hola@cotifactura.app',
+      },
+      {
+        '@type': 'WebSite',
+        name: 'CotiFactura',
+        url: SITE_URL,
+        inLanguage: 'es-CO',
+      },
+    ],
+  }
+
   return (
     <html lang="es" className={`${geist.variable} ${geistMono.variable} ${dmSans.variable} bg-background`} suppressHydrationWarning>
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="description" content="Genera cotizaciones y cuentas de cobro profesionales de forma rápida y sencilla" />
+        <meta name="description" content={SITE_DESCRIPTION} />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <script
+          type="application/ld+json"
+          // eslint-disable-next-line react/no-danger
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body className="antialiased min-h-screen">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>

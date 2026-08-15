@@ -165,7 +165,6 @@ export function SubscriptionPaywall({
       className="min-h-screen flex items-center justify-center p-6 bg-black text-white antialiased relative overflow-hidden"
       style={{ fontFamily: 'var(--font-dm-sans), sans-serif' }}
     >
-      {/* Glow radial de fondo, mismo patrón que el hero */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{

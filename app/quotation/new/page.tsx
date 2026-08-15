@@ -1,5 +1,12 @@
 import { Header } from '@/components/header'
 import { QuotationForm } from '@/components/quotation-form'
+import type { Metadata } from 'next'
+
+// Página privada (requiere sesión): no debe indexarse en buscadores.
+export const metadata: Metadata = {
+  title: 'Nueva cotización',
+  robots: { index: false, follow: false },
+}
 
 export default function NewQuotationPage() {
   return (
