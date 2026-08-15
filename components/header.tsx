@@ -97,9 +97,13 @@ export function Header({ onSettingsClick }: HeaderProps) {
 
         {/* Logo con gradiente */}
         <Link href="/" className="group flex min-w-0 items-center gap-2 sm:gap-3 transition-transform duration-200 hover:scale-[1.02]">
-          <div className="relative flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-full bg-primary transition-all duration-300 group-hover:scale-105">
-            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
-            <div className="absolute inset-0 rounded-xl bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
+          <div className="relative flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center overflow-hidden bg-white rounded-full transition-all duration-300 group-hover:scale-105 dark:bg-white">
+            <img
+              src="/icon-512x512.jpg"
+              alt="CotiFactura"
+              className="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 rounded-full bg-white/10 opacity-0 transition-opacity group-hover:opacity-100" />
           </div>
           <div className="flex min-w-0 flex-col">
             <span className="truncate text-base sm:text-xl font-semibold tracking-[-0.02em] text-foreground">
@@ -147,8 +151,12 @@ export function Header({ onSettingsClick }: HeaderProps) {
               {/* Header del menú */}
               <div className="p-6 border-b border-border/50 bg-accent/40">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-                    <FileText className="h-6 w-6 text-white" />
+                  <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-white shadow-sm dark:bg-white">
+                    <img
+                      src="/icon-512x512.jpg"
+                      alt="CotiFactura"
+                      className="h-full w-full object-cover"
+                    />
                   </div>
                   <div>
                     <h2 className="font-bold text-lg">CotiFactura</h2>

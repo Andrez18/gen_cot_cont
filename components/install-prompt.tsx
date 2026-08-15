@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Download, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -71,8 +71,12 @@ export function InstallPrompt() {
   return (
     <Card className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-md border-primary/20 bg-card shadow-lg install-banner">
       <CardContent className="flex items-center gap-4 p-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary">
-          <Download className="h-6 w-6 text-primary-foreground" />
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-white shadow-sm dark:bg-white">
+          <img
+            src="/icon-512x512.jpg"
+            alt="CotiFactura"
+            className="h-full w-full object-cover"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm">Instalar CotiFactura</p>

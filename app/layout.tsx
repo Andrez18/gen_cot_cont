@@ -93,7 +93,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icon-512x512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/icon-512x512.jpg', sizes: '512x512', type: 'image/jpeg' },
     ],
     apple: '/apple-icon.jpg',
   },
@@ -143,7 +143,7 @@ export default function RootLayout({
         '@type': 'Organization',
         name: 'CotiFactura',
         url: SITE_URL,
-        logo: `${SITE_URL}/icon-512x512.png`,
+        logo: `${SITE_URL}/icon-512x512.jpg`,
         email: 'hola@cotifactura.app',
       },
       {
@@ -161,6 +161,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="description" content={SITE_DESCRIPTION} />
+        <link rel="icon" href="/icon-192x192.png" type="image/png" />
+        <link rel="icon" href="/icon-512x512.jpg" type="image/jpeg" />
+        <link rel="apple-touch-icon" href="/apple-icon.jpg" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <script
           type="application/ld+json"

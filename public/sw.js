@@ -6,7 +6,7 @@
 // para que la app cargue más rápido en visitas repetidas.
 
 const CACHE_NAME = 'cotifactura-shell-v1'
-const SHELL_ASSETS = ['/', '/manifest.json', '/icon-192x192.png', '/icon-512x512.png']
+const SHELL_ASSETS = ['/', '/manifest.json', '/apple-icon.jpg', '/icon-192x192.png', '/icon-512x512.jpg']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
