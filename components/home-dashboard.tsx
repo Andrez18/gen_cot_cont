@@ -209,7 +209,7 @@ function StatCard({
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
             {value !== null ? (
-              <p className="truncate text-lg font-semibold tracking-[-0.01em]">{value}</p>
+              <p className="truncate text-lg font-light tracking-[-0.01em]">{value}</p>
             ) : (
               <Skeleton className="mt-1 h-6 w-20" />
             )}
