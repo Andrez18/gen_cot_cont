@@ -49,7 +49,10 @@ export function AuthForm({ variant = 'page' }: AuthFormProps) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { data: { full_name: name } },
+        options: {
+          data: { full_name: name },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
       })
       
       if (!error && data.session && data.user) {
