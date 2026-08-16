@@ -121,7 +121,7 @@ export function SettingsForm() {
             <Input
               value={providerInfo.documentNumber}
               onChange={e => setProviderInfo({ ...providerInfo, documentNumber: e.target.value })}
-              placeholder="18.506.917"
+              placeholder="00.000.000"
             />
           </div>
           <div className="space-y-2">
@@ -129,7 +129,7 @@ export function SettingsForm() {
             <Input
               value={providerInfo.phone}
               onChange={e => setProviderInfo({ ...providerInfo, phone: e.target.value })}
-              placeholder="311 344 0070"
+              placeholder="000 000 0000"
             />
           </div>
           <div className="space-y-2">
@@ -138,7 +138,7 @@ export function SettingsForm() {
               type="email"
               value={providerInfo.email}
               onChange={e => setProviderInfo({ ...providerInfo, email: e.target.value })}
-              placeholder="tu@email.com"
+              placeholder="Escribe tu correo"
             />
           </div>
           <div className="space-y-2 sm:col-span-2">
