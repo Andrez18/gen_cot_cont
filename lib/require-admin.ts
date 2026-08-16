@@ -18,7 +18,11 @@ export async function requireAdmin(req: NextRequest) {
   const { data: { user }, error } = await supabase.auth.getUser()
   if (error || !user || !user.email) return null
 
-  const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase().trim()
+  // Se acepta ADMIN_EMAIL (server-only) o NEXT_PUBLIC_ADMIN_EMAIL como
+  // respaldo, para no depender de tener las dos variables configuradas
+  // en el mismo entorno (ej. Vercel).
+  const adminEmail = (process.env.ADMIN_EMAIL ?? process.env.NEXT_PUBLIC_ADMIN_EMAIL)
+    ?.toLowerCase().trim()
   if (!adminEmail || user.email.toLowerCase() !== adminEmail) return null
 
   return user

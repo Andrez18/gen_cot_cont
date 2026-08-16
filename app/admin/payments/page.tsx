@@ -6,7 +6,7 @@ import { useAuth } from '@/hooks/use-auth'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Loader2, ImageIcon, ArrowLeft, Tag } from 'lucide-react'
+import { Loader2, ImageIcon, ArrowLeft, Tag, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 
@@ -110,6 +110,12 @@ export default function AdminPaymentsPage() {
               <Link href="/admin/discount-codes">
                 <Tag className="h-4 w-4 mr-2" />
                 Códigos de descuento
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/users">
+                <Users className="h-4 w-4 mr-2" />
+                Usuarios
               </Link>
             </Button>
           </div>

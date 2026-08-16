@@ -9,6 +9,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "nodemailer": "^6.9.16",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.12",
     "@radix-ui/react-alert-dialog": "1.1.15",
@@ -64,6 +65,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/nodemailer": "^6.4.17",
     "@tailwindcss/postcss": "^4.2.0",
     "@types/node": "^22",
     "@types/react": "^19",

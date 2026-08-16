@@ -20,7 +20,7 @@ import {
   LogIn,
   UserPlus,
 } from 'lucide-react'
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { AuthForm } from '@/components/auth-form'
 const PRICE_COP = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_COP ?? '30000'
 
@@ -762,6 +762,9 @@ export function LandingPage() {
           <DialogTitle className="sr-only">
             Iniciar sesión o crear cuenta en CotiFactura
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Formulario para iniciar sesión, registrarte o recuperar tu contraseña en CotiFactura
+          </DialogDescription>
           <AuthForm variant="modal" />
         </DialogContent>
       </Dialog>

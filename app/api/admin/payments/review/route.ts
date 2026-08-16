@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/require-admin'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { sendEmail, paymentApprovedEmail, paymentRejectedEmail } from '@/lib/email'
 
 const SUBSCRIPTION_DAYS = 30
 
@@ -71,6 +72,14 @@ export async function POST(req: NextRequest) {
     // se había canjeado al enviar la solicitud.
     await supabaseAdmin.rpc('release_discount_code', { p_code: paymentRequest.discount_code })
   }
+
+  // Aviso por correo al usuario. Si falla el envío, no afecta la
+  // aprobación/rechazo, que ya quedó guardada arriba.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cotifactura.vercel.app'
+  const { subject, html } = action === 'approve'
+    ? paymentApprovedEmail(siteUrl)
+    : paymentRejectedEmail(siteUrl)
+  await sendEmail({ to: paymentRequest.user_email, subject, html })
 
   return NextResponse.json({ success: true })
 }

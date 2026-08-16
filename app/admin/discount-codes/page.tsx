@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select'
-import { Loader2, ArrowLeft, ShieldCheck } from 'lucide-react'
+import { Loader2, ArrowLeft, ShieldCheck, Users } from 'lucide-react'
 import Link from 'next/link'
 import { Header } from '@/components/header'
 
@@ -130,6 +130,12 @@ export default function AdminDiscountCodesPage() {
               <Link href="/admin/payments">
                 <ShieldCheck className="h-4 w-4 mr-2" />
                 Pagos pendientes
+              </Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/admin/users">
+                <Users className="h-4 w-4 mr-2" />
+                Usuarios
               </Link>
             </Button>
           </div>

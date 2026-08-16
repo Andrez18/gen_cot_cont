@@ -10,6 +10,7 @@ const PUBLIC_ROUTES = [
   '/politica-de-uso-y-compra',
   '/aviso-legal',
   '/contacto',
+  '/reset-password',
 ]
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {

@@ -3,6 +3,7 @@ import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Header } from '@/components/header'
 import { SettingsForm } from '@/components/settings-form'
+import { SubscriptionSettings } from '@/components/subscription-settings'
 import type { Metadata } from 'next'
 
 // Página privada (requiere sesión): no debe indexarse en buscadores.
@@ -22,7 +23,10 @@ export default function SettingsPage() {
             Volver al inicio
           </Link>
         </Button>
-        <SettingsForm />
+        <div className="space-y-6">
+          <SubscriptionSettings />
+          <SettingsForm />
+        </div>
       </main>
     </div>
   )

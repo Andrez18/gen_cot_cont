@@ -17,6 +17,7 @@ import {
   Moon,
   ShieldCheck,
   Tag,
+  Users,
   Download,
   Share,
   SquarePlus,
@@ -51,6 +52,7 @@ const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase().trim()
 const ADMIN_LINKS = [
   { href: '/admin/payments',        label: 'Pagos pendientes',    icon: ShieldCheck },
   { href: '/admin/discount-codes',  label: 'Códigos de descuento', icon: Tag },
+  { href: '/admin/users',           label: 'Usuarios',             icon: Users },
 ]
 
 const NAV_LINKS = [
