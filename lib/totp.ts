@@ -135,3 +135,33 @@ export async function getEncryptedSecret(): Promise<string | null> {
   }
   return data?.secret ?? null
 }
+
+// ─── MFA session token (short-lived proof of verification) ───────
+
+const MFA_TOKEN_SECRET = process.env.MFA_ENCRYPTION_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY ?? ''
+const MFA_TOKEN_TTL_MS = 4 * 60 * 60 * 1000 // 4 horas
+
+export function signMfaToken(adminEmail: string): string {
+  const payload = JSON.stringify({ email: adminEmail, exp: Date.now() + MFA_TOKEN_TTL_MS })
+  const hmac = crypto.createHmac('sha256', MFA_TOKEN_SECRET)
+  hmac.update(payload)
+  const sig = hmac.digest('hex')
+  return Buffer.from(payload).toString('base64') + '.' + sig
+}
+
+export function verifyMfaToken(token: string): boolean {
+  try {
+    const [payloadB64, sig] = token.split('.')
+    if (!payloadB64 || !sig) return false
+    const payload = Buffer.from(payloadB64, 'base64').toString('utf8')
+    const hmac = crypto.createHmac('sha256', MFA_TOKEN_SECRET)
+    hmac.update(payload)
+    const expectedSig = hmac.digest('hex')
+    if (sig !== expectedSig) return false
+    const data = JSON.parse(payload)
+    if (typeof data.exp !== 'number' || Date.now() > data.exp) return false
+    return true
+  } catch {
+    return false
+  }
+}

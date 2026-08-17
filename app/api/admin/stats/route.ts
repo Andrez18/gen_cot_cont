@@ -106,6 +106,7 @@ export async function GET(req: NextRequest) {
       canceledSubscriptions,
       pendingPayments: pendingPayments.length,
       rejectedCount,
+      approvedCount: approvedPayments.length,
       totalRevenue,
       revenueLast30d,
       revenueThisMonth,

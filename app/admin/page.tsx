@@ -16,6 +16,7 @@ import {
   Shield,
 } from 'lucide-react'
 import { PillBarChart } from '@/components/admin/pill-bar-chart'
+import { PaymentStatusChart } from '@/components/admin/payment-status-chart'
 import { MFASettings } from '@/components/admin/mfa-settings'
 
 interface Totals {
@@ -25,6 +26,7 @@ interface Totals {
   activeSubscriptions: number
   canceledSubscriptions: number
   pendingPayments: number
+  approvedCount: number
   rejectedCount: number
   totalRevenue: number
   revenueLast30d: number
@@ -202,7 +204,7 @@ export default function AdminDashboardPage() {
         />
       </div>
 
-      {/* Gráficos tipo cápsula, estilo mockup de la landing */}
+      {/* Gráficos tipo cápsula */}
       <div className="grid lg:grid-cols-2 gap-4">
         <PillBarChart
           label="Registros de la semana"
@@ -215,6 +217,13 @@ export default function AdminDashboardPage() {
           formatValue={(v) => cop(v)}
         />
       </div>
+
+      {/* Estado de pagos */}
+      <PaymentStatusChart
+        pending={totals.pendingPayments}
+        approved={totals.approvedCount}
+        rejected={totals.rejectedCount}
+      />
 
       {/* Actividad de la plataforma + últimos usuarios */}
       <div className="grid lg:grid-cols-2 gap-4">

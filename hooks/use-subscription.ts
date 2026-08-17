@@ -31,6 +31,8 @@ export function useSubscription() {
 
     if (data && !isExpired && data.status === 'active') {
       setStatus('active')
+      // Verificar si la suscripción está por vencer (notificación push)
+      checkSubscriptionExpiry()
       return
     }
 
@@ -50,6 +52,20 @@ export function useSubscription() {
     if (!authLoaded) return
     refresh()
   }, [authLoaded, refresh])
+
+  // Verificar expiración y enviar push notification (se ejecuta una vez por sesión)
+  const checkSubscriptionExpiry = useCallback(async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      await fetch('/api/subscription/check-expiry', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+    } catch {
+      // Silent
+    }
+  }, [])
 
   return { status, currentPeriodEnd, refresh }
 }

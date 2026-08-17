@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { AdminHeader } from '@/components/admin/admin-header'
+import { MfaGuard } from '@/components/admin/mfa-guard'
 
 // Panel de administración: requiere sesión de admin, nunca debe
 // indexarse en buscadores. Visualmente es deliberadamente distinto de la
@@ -32,8 +33,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       />
 
       <div className="relative">
-        <AdminHeader />
-        <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">{children}</main>
+        <MfaGuard>
+          <AdminHeader />
+          <main className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 sm:py-10">{children}</main>
+        </MfaGuard>
       </div>
     </div>
   )

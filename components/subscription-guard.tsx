@@ -1,7 +1,9 @@
 'use client'
 
+import { useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useSubscription } from '@/hooks/use-subscription'
+import { usePushRegistration } from '@/hooks/use-push-registration'
 import { usePathname } from 'next/navigation'
 import { SubscriptionPaywall } from './subscription-paywall'
 
@@ -19,7 +21,17 @@ const PUBLIC_ROUTES = [
 export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const { status, refresh } = useSubscription()
+  const { register } = usePushRegistration()
   const pathname = usePathname()
+  const pushRegistered = useRef(false)
+
+  // Registrar push notifications una sola vez cuando el usuario tiene sesión activa
+  useEffect(() => {
+    if (user && status === 'active' && !pushRegistered.current) {
+      pushRegistered.current = true
+      register()
+    }
+  }, [user, status, register])
 
   // Permitir acceso a rutas públicas sin verificación de suscripción
   const isPublicRoute = PUBLIC_ROUTES.some(route => pathname.startsWith(route))

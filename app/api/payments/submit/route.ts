@@ -3,6 +3,7 @@ import { requireUser } from '@/lib/require-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { applyDiscount } from '@/lib/discount'
 import { logger } from '@/lib/logger'
+import { notifyAdminNewPayment } from '@/lib/push'
 
 const PRICE_COP = Number(process.env.SUBSCRIPTION_PRICE_COP ?? process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_COP ?? '30000')
 
@@ -151,6 +152,9 @@ export async function POST(req: NextRequest) {
     path: '/api/payments/submit',
     meta: { reference, finalAmount, discountCode: redeemedCode },
   })
+
+  // Notificar al admin por push
+  notifyAdminNewPayment(user.email ?? 'desconocido', finalAmount).catch(() => {})
 
   return NextResponse.json({ success: true, finalAmount, discountAmount })
 }

@@ -4,6 +4,7 @@ import { createAdminClient } from '@/lib/supabase-admin'
 import { sendEmail, paymentApprovedEmail, paymentRejectedEmail } from '@/lib/email'
 import { logger } from '@/lib/logger'
 import { createNotification } from '@/lib/notifications'
+import { notifyUserPaymentReview } from '@/lib/push'
 
 const SUBSCRIPTION_DAYS = 30
 
@@ -102,6 +103,9 @@ export async function POST(req: NextRequest) {
       : 'Tu comprobante de pago no pudo ser validado. Puedes volver a intentarlo.',
     link: action === 'approve' ? '/history' : undefined,
   })
+
+  // Push notification al usuario
+  notifyUserPaymentReview(paymentRequest.user_id, action === 'approve' ? 'approved' : 'rejected').catch(() => {})
 
   return NextResponse.json({ success: true })
 }

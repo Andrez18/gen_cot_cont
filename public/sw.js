@@ -45,3 +45,46 @@ self.addEventListener('fetch', (event) => {
       .catch(() => caches.match(event.request)),
   )
 })
+
+// ── Push notifications ──────────────────────────────────────────
+self.addEventListener('push', (event) => {
+  if (!event.data) return
+
+  let data = { title: 'CotiFactura', body: '', icon: '/icon-192x192.png', badge: '/icon-192x192.png', url: '/' }
+  try {
+    data = { ...data, ...event.data.json() }
+  } catch {
+    data.body = event.data.text()
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: data.icon,
+      badge: data.badge,
+      data: { url: data.url },
+      actions: [],
+      vibrate: [100, 50, 100],
+    })
+  )
+})
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+  const url = event.notification.data?.url ?? '/'
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      // Si ya hay una ventana abierta, enfocarla y navegar
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.focus()
+          client.navigate(url)
+          return
+        }
+      }
+      // Si no, abrir una nueva ventana
+      return self.clients.openWindow(url)
+    })
+  )
+})

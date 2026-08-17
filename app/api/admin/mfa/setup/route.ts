@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
   if (!process.env.MFA_ENCRYPTION_KEY) {
     return NextResponse.json(
-      { error: 'Falta MFA_ENCRYPTION_KEY en .env. Genera una con: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"' },
+      { error: 'Falta MFA_ENCRYPTION_KEY en .env' },
       { status: 500 },
     )
   }
@@ -38,10 +38,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       qrData,
       secret: base32Secret,
-      message: 'Escanea el código QR con tu app de autenticación y verifica con un código de 6 dígitos.',
     })
   } catch (err) {
-    console.error('MFA setup error:', err)
     const msg = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: `Error al configurar 2FA: ${msg}` }, { status: 500 })
   }
