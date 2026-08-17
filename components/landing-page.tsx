@@ -758,7 +758,7 @@ export function LandingPage() {
 
       {/* Modal de autenticación */}
       <Dialog open={authOpen} onOpenChange={setAuthOpen}>
-        <DialogContent className="max-w-[440px] p-0 border-none bg-transparent shadow-none">
+        <DialogContent className="max-w-110 p-0 border-none bg-transparent shadow-none">
           <DialogTitle className="sr-only">
             Iniciar sesión o crear cuenta en CotiFactura
           </DialogTitle>
