@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { FileText, Receipt, Trash2, Eye, Download, Search, TrendingUp, Clock, ChevronDown, ChevronUp, Image, Wrench, Building2 } from 'lucide-react'
+import { FileText, Receipt, Trash2, Eye, Download, Search, TrendingUp, Clock, ChevronDown, ChevronUp, Image, Wrench, Building2, FileSpreadsheet, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -15,11 +15,13 @@ import { QuotationPreview } from './quotation-preview'
 import { InvoicePreview } from './invoice-preview'
 import { ToolsForm } from './tools-form'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
-import { useQuotations, useInvoices, useExpenseRecords, useExpenseReports, useTools } from '@/hooks/use-supabase-storage'
+import { useQuotations, useInvoices, useExpenseRecords, useExpenseReports, useTools, type SupabaseQuotationRow, type SupabaseInvoiceRow, type SupabaseExpenseRecordRow, type SupabaseExpenseReportRow, type Tool } from '@/hooks/use-supabase-storage'
 import { supabase } from '@/lib/supabase'
 import { useNotification } from '@/hooks/use_notification'
+import { exportQuotationsCSV, exportInvoicesCSV } from '@/lib/csv-export'
+import { shareQuotationWhatsApp, shareInvoiceWhatsApp, shareExpenseReportWhatsApp } from '@/lib/whatsapp'
 
-function mapQuotation(q: any): Quotation {
+function mapQuotation(q: SupabaseQuotationRow): Quotation {
   return {
     id: q.id,
     number: q.number,
@@ -36,7 +38,7 @@ function mapQuotation(q: any): Quotation {
   }
 }
 
-function mapInvoice(i: any): Invoice {
+function mapInvoice(i: SupabaseInvoiceRow): Invoice {
   return {
     id: i.id,
     number: i.number,
@@ -52,7 +54,18 @@ function mapInvoice(i: any): Invoice {
   }
 }
 
-function RegistroRow({ r, onVerFoto }: { r: any; onVerFoto: (url: string) => void }) {
+type InformeData = SupabaseExpenseReportRow | {
+  fecha: string
+  ingresos: number
+  gastos: number
+  balance: number
+  gastos_por_cat: Record<string, number>
+  gastosPorCat?: Record<string, number>
+  total_registros: number
+  totalRegistros?: number
+}
+
+function RegistroRow({ r, onVerFoto }: { r: SupabaseExpenseRecordRow; onVerFoto: (url: string) => void }) {
   return (
     <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--muted)', fontSize: '13px' }}>
       {/* Fila principal */}
@@ -80,7 +93,7 @@ function RegistroRow({ r, onVerFoto }: { r: any; onVerFoto: (url: string) => voi
           <>
             <span style={{ fontSize: '11px', color: 'var(--border)' }}>·</span>
             <button
-              onClick={() => onVerFoto(r.foto_url)}
+              onClick={() => { if (r.foto_url) onVerFoto(r.foto_url) }}
               style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--muted-foreground)' }}
             >
               <Image size={11} /> foto
@@ -93,14 +106,15 @@ function RegistroRow({ r, onVerFoto }: { r: any; onVerFoto: (url: string) => voi
 }
 
 function InformeCard({
-  informe, registros, index, enProgreso, onVerFoto, onVerPdf,
+  informe, registros, index, enProgreso, onVerFoto, onVerPdf, onWhatsApp,
 }: {
-  informe: any
-  registros?: any[]
+  informe: InformeData
+  registros?: SupabaseExpenseRecordRow[]
   index: number
   enProgreso?: boolean
   onVerFoto: (url: string) => void
-  onVerPdf: (informe: any, registros: any[], index: number, enProgreso?: boolean) => void
+  onVerPdf: (informe: InformeData, registros: SupabaseExpenseRecordRow[], index: number, enProgreso?: boolean) => void
+  onWhatsApp: () => void
 }) {
   const [expanded, setExpanded] = useState(enProgreso ?? false)
   const [verRegistros, setVerRegistros] = useState(false)
@@ -145,6 +159,16 @@ function InformeCard({
             >
               <Eye size={12} />
               <span className="hidden sm:inline">PDF</span>
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="gap-1 h-7 text-xs px-2"
+              onClick={e => { e.stopPropagation(); onWhatsApp() }}
+              title="Compartir por WhatsApp"
+            >
+              <MessageSquare size={12} className="text-green-600" />
+              <span className="hidden sm:inline">WhatsApp</span>
             </Button>
             {expanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
           </div>
@@ -207,7 +231,7 @@ function InformeCard({
   )
 }
 
-function GastosTab({ onVerFoto, onVerPdf }: { onVerFoto: (url: string) => void; onVerPdf: (informe: any, registros: any[], index: number, enProgreso?: boolean) => void }) {
+function GastosTab({ onVerFoto, onVerPdf, onWhatsApp }: { onVerFoto: (url: string) => void; onVerPdf: (informe: InformeData, registros: SupabaseExpenseRecordRow[], index: number, enProgreso?: boolean) => void; onWhatsApp: (informe: InformeData, registros: SupabaseExpenseRecordRow[], index: number, enProgreso?: boolean) => void }) {
   const { records: registros, isLoaded: regLoaded } = useExpenseRecords()
   const { reports: informes, isLoaded: infLoaded, hasMore, isLoadingMore, loadMore } = useExpenseReports()
 
@@ -254,6 +278,7 @@ function GastosTab({ onVerFoto, onVerPdf }: { onVerFoto: (url: string) => void; 
           enProgreso
           onVerFoto={onVerFoto}
           onVerPdf={onVerPdf}
+          onWhatsApp={() => onWhatsApp(informeEnProgreso, registros, 0, true)}
         />
       )}
       {informes.length > 0 && (
@@ -271,6 +296,7 @@ function GastosTab({ onVerFoto, onVerPdf }: { onVerFoto: (url: string) => void; 
               index={informes.length - i}
               onVerFoto={onVerFoto}
               onVerPdf={onVerPdf}
+              onWhatsApp={() => onWhatsApp(inf, inf.expense_records ?? [], informes.length - i, false)}
             />
           ))}
         </>
@@ -289,7 +315,7 @@ function GastosTab({ onVerFoto, onVerPdf }: { onVerFoto: (url: string) => void; 
 function HerramientasTab({
   onVerPdf,
 }: {
-  onVerPdf: (tools: any[], total: number, obraName?: string) => void
+  onVerPdf: (tools: Tool[], total: number, obraName?: string) => void
 }) {
   const { tools, isLoaded, hasMore, isLoadingMore, loadMore } = useTools()
   const [searchTerm, setSearchTerm] = useState('')
@@ -314,7 +340,7 @@ function HerramientasTab({
   // Agrupar por obra_nombre (null → "Sin obra")
   const grupos = tools
     .filter(t => !searchTerm || t.nombre?.toLowerCase().includes(searchTerm.toLowerCase()))
-    .reduce<Record<string, any[]>>((acc, t) => {
+    .reduce<Record<string, Tool[]>>((acc, t) => {
       const key = t.obra_nombre?.trim() || 'Sin obra'
       if (!acc[key]) acc[key] = []
       acc[key].push(t)
@@ -420,7 +446,7 @@ function HerramientasTab({
 export function DocumentHistory() {
   const { quotations, isLoaded: quotationsLoaded, hasMore: hasMoreQuotations, isLoadingMore: isLoadingMoreQuotations, loadMore: loadMoreQuotations } = useQuotations()
   const { invoices, isLoaded: invoicesLoaded, hasMore: hasMoreInvoices, isLoadingMore: isLoadingMoreInvoices, loadMore: loadMoreInvoices } = useInvoices()
-  const { generatePdf, isGenerating } = usePdfGenerator()
+  const { generatePdf, generatePdfBlob, isGenerating } = usePdfGenerator()
   const { generateExpensePdf, isGenerating: isGeneratingInforme, imageProgress } = useExpensePdfGenerator()
   const { success, error: notifError, warning } = useNotification()
 
@@ -428,16 +454,16 @@ export function DocumentHistory() {
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [fotoUrl, setFotoUrl] = useState<string | null>(null)
-  const [toolsPdfData, setToolsPdfData] = useState<{ tools: any[]; total: number; obraName?: string } | null>(null)
-  const [informePdfData, setInformePdfData] = useState<{ informe: any; registros: any[]; index: number; enProgreso?: boolean } | null>(null)
+  const [toolsPdfData, setToolsPdfData] = useState<{ tools: Tool[]; total: number; obraName?: string } | null>(null)
+  const [informePdfData, setInformePdfData] = useState<{ informe: InformeData; registros: SupabaseExpenseRecordRow[]; index: number; enProgreso?: boolean } | null>(null)
 
   const filteredQuotations = quotations.filter(q =>
-    q.client?.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    q.number?.includes(searchTerm)
+    q.client.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    q.number.includes(searchTerm)
   )
   const filteredInvoices = invoices.filter(i =>
-    i.client?.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    i.number?.includes(searchTerm)
+    i.client.companyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    i.number.includes(searchTerm)
   )
 
   const deleteQuotation = useCallback(async (id: string) => {
@@ -483,11 +509,19 @@ export function DocumentHistory() {
     if (!informePdfData) return
     const nombre = informePdfData.enProgreso ? 'Informe-en-progreso' : `Informe-gastos-${informePdfData.index}`
     try {
-      await generateExpensePdf(informePdfData.informe, informePdfData.registros ?? [], {
+      const blob = await generateExpensePdf(informePdfData.informe, informePdfData.registros ?? [], {
         index: informePdfData.index,
         enProgreso: informePdfData.enProgreso,
         filename: nombre,
       })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${nombre}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
     } catch { alert('Error al generar el PDF') }
   }
 
@@ -527,9 +561,17 @@ export function DocumentHistory() {
 
         {/* Cotizaciones */}
         <TabsContent value="quotations" className="mt-4 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por cliente o número..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Buscar por cliente o número..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+            </div>
+            {quotations.length > 0 && (
+              <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => exportQuotationsCSV(quotations)}>
+                <FileSpreadsheet className="h-4 w-4" />
+                <span className="hidden sm:inline">CSV</span>
+              </Button>
+            )}
           </div>
           {filteredQuotations.length === 0 ? (
             <Empty><EmptyHeader>
@@ -576,9 +618,17 @@ export function DocumentHistory() {
 
         {/* Cuentas de cobro */}
         <TabsContent value="invoices" className="mt-4 space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por cliente o número..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Buscar por cliente o número..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+            </div>
+            {invoices.length > 0 && (
+              <Button variant="outline" size="sm" className="gap-2 shrink-0" onClick={() => exportInvoicesCSV(invoices)}>
+                <FileSpreadsheet className="h-4 w-4" />
+                <span className="hidden sm:inline">CSV</span>
+              </Button>
+            )}
           </div>
           {filteredInvoices.length === 0 ? (
             <Empty><EmptyHeader>
@@ -628,6 +678,15 @@ export function DocumentHistory() {
           <GastosTab
             onVerFoto={setFotoUrl}
             onVerPdf={(informe, registros, index, enProgreso) => setInformePdfData({ informe, registros, index, enProgreso })}
+            onWhatsApp={(informe, registros, index, enProgreso) => shareExpenseReportWhatsApp(
+              index,
+              enProgreso,
+              () => generateExpensePdf(informe, registros, {
+                index,
+                enProgreso,
+                filename: enProgreso ? 'Informe-en-progreso' : `Informe-gastos-${index}`,
+              }),
+            )}
           />
         </TabsContent>
 
@@ -645,9 +704,16 @@ export function DocumentHistory() {
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>Cotización #{selectedQuotation?.number}</span>
-              <Button size="sm" onClick={handleDownloadQuotationPdf} disabled={isGenerating}>
-                <Download className="h-4 w-4 mr-2" />{isGenerating ? 'Generando...' : 'PDF'}
-              </Button>
+              <div className="flex items-center gap-2">
+                {selectedQuotation && (
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => shareQuotationWhatsApp(selectedQuotation.number, () => generatePdfBlob('quotation-preview'))}>
+                    <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
+                  </Button>
+                )}
+                <Button size="sm" onClick={handleDownloadQuotationPdf} disabled={isGenerating}>
+                  <Download className="h-4 w-4 mr-2" />{isGenerating ? 'Generando...' : 'PDF'}
+                </Button>
+              </div>
             </DialogTitle>
           </DialogHeader>
           {selectedQuotation && <QuotationPreview quotation={selectedQuotation} />}
@@ -660,9 +726,16 @@ export function DocumentHistory() {
           <DialogHeader>
             <DialogTitle className="flex items-center justify-between">
               <span>Cuenta de Cobro #{selectedInvoice?.number}</span>
-              <Button size="sm" onClick={handleDownloadInvoicePdf} disabled={isGenerating}>
-                <Download className="h-4 w-4 mr-2" />{isGenerating ? 'Generando...' : 'PDF'}
-              </Button>
+              <div className="flex items-center gap-2">
+                {selectedInvoice && (
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => shareInvoiceWhatsApp(selectedInvoice.number, () => generatePdfBlob('invoice-preview'))}>
+                    <MessageSquare className="h-3.5 w-3.5" /> WhatsApp
+                  </Button>
+                )}
+                <Button size="sm" onClick={handleDownloadInvoicePdf} disabled={isGenerating}>
+                  <Download className="h-4 w-4 mr-2" />{isGenerating ? 'Generando...' : 'PDF'}
+                </Button>
+              </div>
             </DialogTitle>
           </DialogHeader>
           {selectedInvoice && <InvoicePreview invoice={selectedInvoice} />}
@@ -842,17 +915,38 @@ export function DocumentHistory() {
                 )}
               </div>
             </div>
-            <Button size="sm" className="gap-2 shrink-0 ml-3" onClick={handleDownloadInformePdf} disabled={isGeneratingInforme}>
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">
-                {imageProgress
-                  ? `Cargando fotos (${imageProgress.loaded}/${imageProgress.total})...`
-                  : isGeneratingInforme ? 'Generando...' : 'Descargar PDF'}
-              </span>
-              <span className="sm:hidden">
-                {imageProgress ? `${imageProgress.loaded}/${imageProgress.total}` : isGeneratingInforme ? '...' : 'PDF'}
-              </span>
-            </Button>
+            <div className="flex items-center gap-2 shrink-0 ml-3">
+              {informePdfData && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  onClick={() => shareExpenseReportWhatsApp(
+                    informePdfData.index,
+                    informePdfData.enProgreso,
+                    () => generateExpensePdf(informePdfData.informe, informePdfData.registros ?? [], {
+                      index: informePdfData.index,
+                      enProgreso: informePdfData.enProgreso,
+                      filename: informePdfData.enProgreso ? 'Informe-en-progreso' : `Informe-gastos-${informePdfData.index}`,
+                    }),
+                  )}
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">WhatsApp</span>
+                </Button>
+              )}
+              <Button size="sm" className="gap-2" onClick={handleDownloadInformePdf} disabled={isGeneratingInforme}>
+                <Download className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">
+                  {imageProgress
+                    ? `Cargando fotos (${imageProgress.loaded}/${imageProgress.total})...`
+                    : isGeneratingInforme ? 'Generando...' : 'Descargar PDF'}
+                </span>
+                <span className="sm:hidden">
+                  {imageProgress ? `${imageProgress.loaded}/${imageProgress.total}` : isGeneratingInforme ? '...' : 'PDF'}
+                </span>
+              </Button>
+            </div>
           </div>
 
           {/* Contenido scrollable */}

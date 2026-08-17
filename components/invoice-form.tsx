@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Save, FileDown, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -26,6 +28,7 @@ import {
   DEFAULT_BANK_INFO,
   DEFAULT_CLIENT_INFO,
 } from '@/lib/document-utils'
+import { invoiceSchema, type InvoiceFormData } from '@/lib/validations'
 import { InvoicePreview } from './invoice-preview'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 import { useLocalStorage } from '@/hooks/use-local-storage'
@@ -42,48 +45,63 @@ export function InvoiceForm() {
   const { success, error: notifError, loading, dismiss } = useNotification()
 
   const [showPreview, setShowPreview] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)  
-  const [documentNumber, setDocumentNumber] = useState('')
-  const [date, setDate] = useState('')
-  const [city, setCity] = useState('Medellín')
-  const [client, setClient] = useState(DEFAULT_CLIENT_INFO)
-  const [provider, setProvider] = useState(DEFAULT_PROVIDER_INFO)
-  const [bankInfoState, setBankInfo] = useState(DEFAULT_BANK_INFO)
-  const [concept, setConcept] = useState('')
-  const [amount, setAmount] = useState<number>(0)
+  const [isSaving, setIsSaving] = useState(false)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue: setFormValue,
+    watch,
+  } = useForm<InvoiceFormData>({
+    resolver: zodResolver(invoiceSchema),
+    defaultValues: {
+      documentNumber: '',
+      date: '',
+      city: 'Medellín',
+      client: DEFAULT_CLIENT_INFO,
+      provider: DEFAULT_PROVIDER_INFO,
+      concept: '',
+      amount: 0,
+      bankInfo: DEFAULT_BANK_INFO,
+    },
+  })
+
+  const watchedAmount = watch('amount')
 
   useEffect(() => {
-    setDocumentNumber(generateDocumentNumber())
-    setDate(new Date().toISOString().split('T')[0])
-  }, [])
+    setFormValue('documentNumber', generateDocumentNumber())
+    setFormValue('date', new Date().toISOString().split('T')[0])
+  }, [setFormValue])
 
   useEffect(() => {
     if (isLoaded) {
-      setProvider({ ...providerInfo, signaturePath: signaturePath ?? undefined })
-      setBankInfo(bankInfo)
-      setClient(clientInfo)
+      setFormValue('provider', { ...providerInfo, signaturePath: signaturePath ?? undefined })
+      setFormValue('bankInfo', bankInfo)
+      setFormValue('client', clientInfo)
     }
-  }, [isLoaded, signaturePath])
+  }, [isLoaded, signaturePath, providerInfo, bankInfo, clientInfo, setFormValue])
 
-  useEffect(() => { setProvider(savedProvider) }, [savedProvider])
-  useEffect(() => { setBankInfo(savedBank) }, [savedBank])
+  useEffect(() => { setFormValue('provider', savedProvider) }, [savedProvider, setFormValue])
+  useEffect(() => { setFormValue('bankInfo', savedBank) }, [savedBank, setFormValue])
 
-  const invoice: Invoice = {
+  const buildInvoice = (data: InvoiceFormData): Invoice => ({
     id: generateId(),
-    number: documentNumber,
-    date,
-    city,
-    client,
-    provider,
-    concept,
-    amount,
-    amountInWords: numberToWords(amount),
-    bankInfo,
+    number: data.documentNumber,
+    date: data.date,
+    city: data.city,
+    client: data.client,
+    provider: data.provider,
+    concept: data.concept,
+    amount: data.amount,
+    amountInWords: numberToWords(data.amount),
+    bankInfo: data.bankInfo,
     createdAt: new Date().toISOString(),
-  }
+  })
 
-  const handleSave = async () => {
+  const onSubmit = async (data: InvoiceFormData) => {
     setIsSaving(true)
+    const invoice = buildInvoice(data)
     const loadingId = loading('Guardando cuenta de cobro...')
     const { error } = await saveInvoice(invoice)
     dismiss(loadingId)
@@ -93,8 +111,8 @@ export function InvoiceForm() {
       notifError('Error al guardar', error.message)
       return
     }
-    setSavedProvider(provider)
-    setSavedBank(bankInfo)
+    setSavedProvider(data.provider)
+    setSavedBank(data.bankInfo)
     success('Cuenta de cobro guardada', 'El documento fue guardado exitosamente')
   }
 
@@ -105,7 +123,7 @@ export function InvoiceForm() {
     }
     const loadingId = loading('Generando PDF...')
     try {
-      await generatePdf('invoice-preview', `CuentaCobro-${documentNumber}`)
+      await generatePdf('invoice-preview', `CuentaCobro-${watch('documentNumber')}`)
       dismiss(loadingId)
       success('PDF generado', 'El archivo se descargó correctamente')
     } catch {
@@ -115,13 +133,15 @@ export function InvoiceForm() {
   }
 
   if (showPreview) {
+    const formData = watch()
+    const invoice = buildInvoice(formData)
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setShowPreview(false)}>
             Volver a Editar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSubmit(onSubmit)} disabled={isSaving}>
             <Save className="h-4 w-4 mr-2" />
             {isSaving ? 'Guardando...' : 'Guardar'}
           </Button>
@@ -136,7 +156,7 @@ export function InvoiceForm() {
   }
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
       {isLoaded && !hasSignature && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm text-amber-800 dark:text-amber-200">
           Aún no has agregado tu firma. Ve a{' '}
@@ -152,15 +172,18 @@ export function InvoiceForm() {
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="number">Número de Cuenta</Label>
-            <Input id="number" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} placeholder="1012" />
+            <Input id="number" {...register('documentNumber')} placeholder="1012" />
+            {errors.documentNumber && <p className="text-xs text-destructive">{errors.documentNumber.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="date">Fecha</Label>
-            <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input id="date" type="date" {...register('date')} />
+            {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="city">Ciudad</Label>
-            <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Medellín" />
+            <Input id="city" {...register('city')} placeholder="Medellín" />
+            {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
           </div>
         </CardContent>
       </Card>
@@ -173,11 +196,13 @@ export function InvoiceForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="companyName">Razón Social</Label>
-            <Input id="companyName" value={client.companyName} onChange={(e) => setClient({ ...client, companyName: e.target.value })} placeholder="EDS ANTIOQUEÑA DE COMBUSTIBLES" />
+            <Input id="companyName" {...register('client.companyName')} placeholder="EDS ANTIOQUEÑA DE COMBUSTIBLES" />
+            {errors.client?.companyName && <p className="text-xs text-destructive">{errors.client.companyName.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="nit">NIT</Label>
-            <Input id="nit" value={client.nit} onChange={(e) => setClient({ ...client, nit: e.target.value })} placeholder="900.207.854-8" />
+            <Input id="nit" {...register('client.nit')} placeholder="900.207.854-8" />
+            {errors.client?.nit && <p className="text-xs text-destructive">{errors.client.nit.message}</p>}
           </div>
         </CardContent>
       </Card>
@@ -190,15 +215,18 @@ export function InvoiceForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="providerName">Nombre Completo</Label>
-            <Input id="providerName" value={provider.name} onChange={(e) => setProvider({ ...provider, name: e.target.value })} placeholder="Jorge Vallejo" />
+            <Input id="providerName" {...register('provider.name')} placeholder="Jorge Vallejo" />
+            {errors.provider?.name && <p className="text-xs text-destructive">{errors.provider.name.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="docNumber">Cédula de Ciudadanía</Label>
-            <Input id="docNumber" value={provider.documentNumber} onChange={(e) => setProvider({ ...provider, documentNumber: e.target.value })} placeholder="18.506.917" />
+            <Input id="docNumber" {...register('provider.documentNumber')} placeholder="18.506.917" />
+            {errors.provider?.documentNumber && <p className="text-xs text-destructive">{errors.provider.documentNumber.message}</p>}
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="phone">Teléfono</Label>
-            <Input id="phone" value={provider.phone} onChange={(e) => setProvider({ ...provider, phone: e.target.value })} placeholder="311-344-00-70" />
+            <Input id="phone" {...register('provider.phone')} placeholder="311-344-00-70" />
+            {errors.provider?.phone && <p className="text-xs text-destructive">{errors.provider.phone.message}</p>}
           </div>
         </CardContent>
       </Card>
@@ -211,14 +239,16 @@ export function InvoiceForm() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="amount">Valor a Cobrar (COP)</Label>
-            <Input id="amount" type="number" value={amount || ''} onChange={(e) => setAmount(parseFloat(e.target.value) || 0)} placeholder="1650000" className="text-lg" />
-            {amount > 0 && (
-              <p className="text-sm text-muted-foreground italic">{numberToWords(amount)}</p>
+            <Input id="amount" type="number" {...register('amount', { valueAsNumber: true })} placeholder="1650000" className="text-lg" />
+            {errors.amount && <p className="text-xs text-destructive">{errors.amount.message}</p>}
+            {watchedAmount > 0 && (
+              <p className="text-sm text-muted-foreground italic">{numberToWords(watchedAmount)}</p>
             )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="concept">Por Concepto de</Label>
-            <Textarea id="concept" value={concept} onChange={(e) => setConcept(e.target.value)} placeholder="Obras civiles (pintura base aceite negra y gris basalto)" rows={3} />
+            <Textarea id="concept" {...register('concept')} placeholder="Obras civiles (pintura base aceite negra y gris basalto)" rows={3} />
+            {errors.concept && <p className="text-xs text-destructive">{errors.concept.message}</p>}
           </div>
         </CardContent>
       </Card>
@@ -231,11 +261,12 @@ export function InvoiceForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="bankEntity">Entidad Bancaria</Label>
-            <Input id="bankEntity" value={bankInfo.entity} onChange={(e) => setBankInfo({ ...bankInfo, entity: e.target.value })} placeholder="Bancolombia" />
+            <Input id="bankEntity" {...register('bankInfo.entity')} placeholder="Bancolombia" />
+            {errors.bankInfo?.entity && <p className="text-xs text-destructive">{errors.bankInfo.entity.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="accountType">Tipo de Cuenta</Label>
-            <Select value={bankInfo.accountType} onValueChange={(value) => setBankInfo({ ...bankInfo, accountType: value })}>
+            <Select value={watch('bankInfo.accountType')} onValueChange={(v) => setFormValue('bankInfo.accountType', v as 'Ahorros' | 'Corriente')}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="Ahorros">Ahorros</SelectItem>
@@ -245,26 +276,28 @@ export function InvoiceForm() {
           </div>
           <div className="space-y-2">
             <Label htmlFor="accountNumber">Número de Cuenta</Label>
-            <Input id="accountNumber" value={bankInfo.accountNumber} onChange={(e) => setBankInfo({ ...bankInfo, accountNumber: e.target.value })} placeholder="91209711252" />
+            <Input id="accountNumber" {...register('bankInfo.accountNumber')} placeholder="91209711252" />
+            {errors.bankInfo?.accountNumber && <p className="text-xs text-destructive">{errors.bankInfo.accountNumber.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="accountHolder">A Nombre de</Label>
-            <Input id="accountHolder" value={bankInfo.accountHolder} onChange={(e) => setBankInfo({ ...bankInfo, accountHolder: e.target.value })} placeholder="María Nathali Gómez Jiménez" />
+            <Input id="accountHolder" {...register('bankInfo.accountHolder')} placeholder="María Nathali Gómez Jiménez" />
+            {errors.bankInfo?.accountHolder && <p className="text-xs text-destructive">{errors.bankInfo.accountHolder.message}</p>}
           </div>
         </CardContent>
       </Card>
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
-        <Button onClick={() => setShowPreview(true)} className="flex-1 sm:flex-none">
+        <Button type="button" onClick={() => setShowPreview(true)} className="flex-1 sm:flex-none">
           <Eye className="h-4 w-4 mr-2" />
           Vista Previa
         </Button>
-        <Button variant="outline" onClick={handleSave} disabled={isSaving} className="flex-1 sm:flex-none">
+        <Button type="submit" variant="outline" disabled={isSaving} className="flex-1 sm:flex-none">
           <Save className="h-4 w-4 mr-2" />
           {isSaving ? 'Guardando...' : 'Guardar'}
         </Button>
       </div>
-    </div>
+    </form>
   )
 }

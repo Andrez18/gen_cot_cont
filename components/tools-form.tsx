@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Header } from '@/components/header'
-import { useTools } from '@/hooks/use-supabase-storage'
+import { useTools, type Tool } from '@/hooks/use-supabase-storage'
 import { useNotification } from '@/hooks/use_notification'
 import { formatCurrency } from '@/lib/document-utils'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
@@ -117,7 +117,7 @@ export function ToolsForm() {
   const setEditField = (field: keyof ToolDraft, value: string) =>
     setEditDraft(prev => ({ ...prev, [field]: value }))
 
-  const startEdit = (tool: any) => {
+  const startEdit = (tool: Tool) => {
     setEditingId(tool.id)
     setEditDraft({
       nombre: tool.nombre,

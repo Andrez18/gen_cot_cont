@@ -2,19 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/require-admin'
 import { createAdminClient } from '@/lib/supabase-admin'
 
+const DEFAULT_LIMIT = 20
+const MAX_LIMIT = 100
+
 export async function GET(req: NextRequest) {
   const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
 
+  const url = req.nextUrl
+  const page = Math.max(1, Number(url.searchParams.get('page') ?? '1'))
+  const limit = Math.min(MAX_LIMIT, Math.max(1, Number(url.searchParams.get('limit') ?? String(DEFAULT_LIMIT))))
+  const search = url.searchParams.get('search')?.trim().toLowerCase() ?? ''
+
   const supabaseAdmin = createAdminClient()
 
-  // auth.admin.listUsers pagina de a 50 por defecto; traemos hasta 1000
-  // en un solo request, suficiente para el tamaño actual de la app.
+  // Paginar auth users
   const { data: usersData, error: usersError } = await supabaseAdmin.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
+    page,
+    perPage: limit,
   })
-  if (usersError) return NextResponse.json({ error: usersError.message }, { status: 500 })
+  if (usersError) return NextResponse.json({ error: 'Error al obtener los usuarios' }, { status: 500 })
 
   const { data: subscriptions } = await supabaseAdmin
     .from('subscriptions')
@@ -25,7 +32,7 @@ export async function GET(req: NextRequest) {
     ((subscriptions ?? []) as SubRow[]).map((s) => [s.user_id, s])
   )
 
-  const users = usersData.users
+  let users = usersData.users
     .map((u) => ({
       id: u.id,
       email: u.email,
@@ -35,7 +42,25 @@ export async function GET(req: NextRequest) {
       subscription_status: subsByUser.get(u.id)?.status ?? null,
       current_period_end: subsByUser.get(u.id)?.current_period_end ?? null,
     }))
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-  return NextResponse.json({ users })
+  // Filtrar por búsqueda si se proporciona
+  if (search) {
+    users = users.filter(
+      (u) =>
+        u.email?.toLowerCase().includes(search) ||
+        u.full_name?.toLowerCase().includes(search)
+    )
+  }
+
+  users.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+  return NextResponse.json({
+    users,
+    pagination: {
+      page,
+      limit,
+      // Nota: Supabase auth.listUsers no devuelve count total, solo la página actual
+      // Para un panel admin completo, esto es suficiente
+    },
+  })
 }

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useForm, useFieldArray } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Plus, Trash2, Save, FileDown, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +26,7 @@ import {
   DEFAULT_CLIENT_INFO,
   DEFAULT_LEGAL_TEXT,
 } from '@/lib/document-utils'
+import { quotationSchema, type QuotationFormData } from '@/lib/validations'
 import { QuotationPreview } from './quotation-preview'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 import { useLocalStorage } from '@/hooks/use-local-storage'
@@ -44,73 +47,85 @@ export function QuotationForm() {
   const { generatePdf, isGenerating } = usePdfGenerator()
 
   const [showPreview, setShowPreview] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)  
+  const [isSaving, setIsSaving] = useState(false)
   const [documentNumber, setDocumentNumber] = useState('')
   const [date, setDate] = useState('')
-  const [city, setCity] = useState('Medellín, Antioquia')
-  const [provider, setProvider] = useState(DEFAULT_PROVIDER_INFO)
-  const [bankInfoState, setBankInfo] = useState(DEFAULT_BANK_INFO)
-  const [client, setClient] = useState(DEFAULT_CLIENT_INFO)
-  const [items, setItems] = useState<LineItem[]>([
-    { id: generateId(), description: '', quantity: 0, unit: 'ml', unitPrice: 0, total: 0 }
-  ])
-  const [notes, setNotes] = useState('')
-  const [includeLegalText, setIncludeLegalText] = useState(true)
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue: setFormValue,
+    watch,
+    control,
+  } = useForm<QuotationFormData>({
+    resolver: zodResolver(quotationSchema),
+    defaultValues: {
+      documentNumber: '',
+      date: '',
+      city: 'Medellín, Antioquia',
+      client: DEFAULT_CLIENT_INFO,
+      provider: DEFAULT_PROVIDER_INFO,
+      items: [{ id: generateId(), description: '', quantity: 0, unit: 'ml', unitPrice: 0, total: 0 }],
+      bankInfo: DEFAULT_BANK_INFO,
+      notes: '',
+      includeLegalText: true,
+    },
+  })
+
+  const { fields, append, remove } = useFieldArray({ control, name: 'items' })
+  const watchedItems = watch('items')
 
   useEffect(() => {
-    setDocumentNumber(generateDocumentNumber())
-    setDate(new Date().toISOString().split('T')[0])
-  }, [])
+    const num = generateDocumentNumber()
+    const today = new Date().toISOString().split('T')[0]
+    setDocumentNumber(num)
+    setDate(today)
+    setFormValue('documentNumber', num)
+    setFormValue('date', today)
+  }, [setFormValue])
 
-  useEffect(() => { setProvider(savedProvider) }, [savedProvider])
-  useEffect(() => { setBankInfo(savedBank) }, [savedBank])
   useEffect(() => {
     if (isLoaded) {
-      setProvider({ ...providerInfo, signaturePath: signaturePath ?? undefined })
-      setBankInfo(bankInfo)
-      setClient(clientInfo)
+      setFormValue('provider', { ...providerInfo, signaturePath: signaturePath ?? undefined })
+      setFormValue('bankInfo', bankInfo)
+      setFormValue('client', clientInfo)
     }
-  }, [isLoaded, signaturePath])
+  }, [isLoaded, signaturePath, providerInfo, bankInfo, clientInfo, setFormValue])
 
-  const updateItem = (id: string, field: keyof LineItem, value: string | number) => {
-    setItems(prev => prev.map(item => {
-      if (item.id !== id) return item
-      const updated = { ...item, [field]: value }
-      if (field === 'quantity' || field === 'unitPrice') {
-        updated.total = Number(updated.quantity) * Number(updated.unitPrice)
-      }
-      return updated
-    }))
+  useEffect(() => { setFormValue('provider', savedProvider) }, [savedProvider, setFormValue])
+  useEffect(() => { setFormValue('bankInfo', savedBank) }, [savedBank, setFormValue])
+
+  const updateItemTotal = (index: number, field: 'quantity' | 'unitPrice', value: number) => {
+    const items = watch('items')
+    const item = items[index]
+    if (!item) return
+    const otherField = field === 'quantity' ? 'unitPrice' : 'quantity'
+    const total = (field === 'quantity' ? value : item.quantity) * (otherField === 'unitPrice' ? value : item.unitPrice)
+    setFormValue(`items.${index}.${field}`, value)
+    setFormValue(`items.${index}.total`, total)
   }
 
-  const addItem = () => {
-    setItems(prev => [...prev, { id: generateId(), description: '', quantity: 0, unit: 'ml', unitPrice: 0, total: 0 }])
-  }
+  const total = (watchedItems ?? []).reduce((sum, item) => sum + (item?.total ?? 0), 0)
 
-  const removeItem = (id: string) => {
-    if (items.length === 1) return
-    setItems(prev => prev.filter(item => item.id !== id))
-  }
-
-  const total = items.reduce((sum, item) => sum + item.total, 0)
-
-  const quotation: Quotation = {
+  const buildQuotation = (data: QuotationFormData): Quotation => ({
     id: generateId(),
-    number: documentNumber,
-    date,
-    city,
-    client,
-    provider,
-    items,
-    total,
-    bankInfo,
-    notes,
-    legalText: includeLegalText ? DEFAULT_LEGAL_TEXT : '',
+    number: data.documentNumber,
+    date: data.date,
+    city: data.city,
+    client: data.client,
+    provider: data.provider,
+    items: data.items,
+    total: data.items.reduce((sum, item) => sum + item.total, 0),
+    bankInfo: data.bankInfo,
+    notes: data.notes,
+    legalText: data.includeLegalText ? DEFAULT_LEGAL_TEXT : '',
     createdAt: new Date().toISOString(),
-  }
+  })
 
-  const handleSave = async () => {
+  const onSubmit = async (data: QuotationFormData) => {
     setIsSaving(true)
+    const quotation = buildQuotation(data)
     const loadingId = loading('Guardando cotización...')
     const { error } = await saveQuotation(quotation)
     dismiss(loadingId)
@@ -120,8 +135,8 @@ export function QuotationForm() {
       notifError('Error al guardar', error.message)
       return
     }
-    setSavedProvider(provider)
-    setSavedBank(bankInfo)
+    setSavedProvider(data.provider)
+    setSavedBank(data.bankInfo)
     success('Cotización guardada', 'El documento fue guardado exitosamente')
   }
 
@@ -142,13 +157,15 @@ export function QuotationForm() {
   }
 
   if (showPreview) {
+    const formData = watch()
+    const quotation = buildQuotation(formData)
     return (
       <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => setShowPreview(false)}>
             Volver a Editar
           </Button>
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button onClick={handleSubmit(onSubmit)} disabled={isSaving}>
             <Save className="h-4 w-4 mr-2" />
             {isSaving ? 'Guardando...' : 'Guardar'}
           </Button>
@@ -163,7 +180,7 @@ export function QuotationForm() {
   }
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
       {isLoaded && !hasSignature && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4 text-sm text-amber-800 dark:text-amber-200">
           Aún no has agregado tu firma. Ve a{' '}
@@ -179,15 +196,18 @@ export function QuotationForm() {
         <CardContent className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="number">Número de Cotización</Label>
-            <Input id="number" value={documentNumber} onChange={(e) => setDocumentNumber(e.target.value)} placeholder="1020" />
+            <Input id="number" {...register('documentNumber')} placeholder="1020" />
+            {errors.documentNumber && <p className="text-xs text-destructive">{errors.documentNumber.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="date">Fecha</Label>
-            <Input id="date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input id="date" type="date" {...register('date')} />
+            {errors.date && <p className="text-xs text-destructive">{errors.date.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="city">Ciudad</Label>
-            <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="Medellín, Antioquia" />
+            <Input id="city" {...register('city')} placeholder="Medellín, Antioquia" />
+            {errors.city && <p className="text-xs text-destructive">{errors.city.message}</p>}
           </div>
         </CardContent>
       </Card>
@@ -200,15 +220,17 @@ export function QuotationForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="companyName">Razón Social</Label>
-            <Input id="companyName" value={client.companyName} onChange={(e) => setClient({ ...client, companyName: e.target.value })} placeholder="ANTIOQUEÑA COMBUSTIBLES S.A.S" />
+            <Input id="companyName" {...register('client.companyName')} placeholder="ANTIOQUEÑA COMBUSTIBLES S.A.S" />
+            {errors.client?.companyName && <p className="text-xs text-destructive">{errors.client.companyName.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="nit">NIT</Label>
-            <Input id="nit" value={client.nit} onChange={(e) => setClient({ ...client, nit: e.target.value })} placeholder="900.207.854-8" />
+            <Input id="nit" {...register('client.nit')} placeholder="900.207.854-8" />
+            {errors.client?.nit && <p className="text-xs text-destructive">{errors.client.nit.message}</p>}
           </div>
           <div className="space-y-2 sm:col-span-2">
             <Label htmlFor="location">Ubicación / Sede</Label>
-            <Input id="location" value={client.location} onChange={(e) => setClient({ ...client, location: e.target.value })} placeholder="EDS Manglar" />
+            <Input id="location" {...register('client.location')} placeholder="EDS Manglar" />
           </div>
         </CardContent>
       </Card>
@@ -217,31 +239,33 @@ export function QuotationForm() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">Detalle de la Cotización</CardTitle>
-          <Button size="sm" onClick={addItem}>
+          <Button size="sm" type="button" onClick={() => append({ id: generateId(), description: '', quantity: 0, unit: 'ml', unitPrice: 0, total: 0 })}>
             <Plus className="h-4 w-4 mr-1" /> Agregar
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {items.map((item, index) => (
-            <div key={item.id} className="grid gap-3 p-4 border rounded-lg bg-muted/30">
+          {fields.map((field, index) => (
+            <div key={field.id} className="grid gap-3 p-4 border rounded-lg bg-muted/30">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">Item {index + 1}</span>
-                <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)} disabled={items.length === 1}>
+                <Button variant="ghost" size="icon" type="button" onClick={() => remove(index)} disabled={fields.length === 1}>
                   <Trash2 className="h-4 w-4 text-destructive" />
                 </Button>
               </div>
               <div className="space-y-2">
                 <Label>Descripción</Label>
-                <Textarea value={item.description} onChange={(e) => updateItem(item.id, 'description', e.target.value)} placeholder="40ml de cerramiento a 2.50m de altura" rows={2} />
+                <Textarea {...register(`items.${index}.description`)} placeholder="40ml de cerramiento a 2.50m de altura" rows={2} />
+                {errors.items?.[index]?.description && <p className="text-xs text-destructive">{errors.items[index]?.description?.message}</p>}
               </div>
               <div className="grid gap-3 sm:grid-cols-4">
                 <div className="space-y-2">
                   <Label>Cantidad</Label>
-                  <Input type="number" value={item.quantity || ''} onChange={(e) => updateItem(item.id, 'quantity', parseFloat(e.target.value) || 0)} placeholder="40" />
+                  <Input type="number" value={watchedItems?.[index]?.quantity || ''} onChange={(e) => updateItemTotal(index, 'quantity', parseFloat(e.target.value) || 0)} placeholder="40" />
+                  {errors.items?.[index]?.quantity && <p className="text-xs text-destructive">{errors.items[index]?.quantity?.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label>Unidad</Label>
-                  <Select value={item.unit} onValueChange={(value) => updateItem(item.id, 'unit', value)}>
+                  <Select value={watchedItems?.[index]?.unit} onValueChange={(v) => setFormValue(`items.${index}.unit`, v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {UNITS.map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}
@@ -250,17 +274,18 @@ export function QuotationForm() {
                 </div>
                 <div className="space-y-2">
                   <Label>Precio Unitario</Label>
-                  <Input type="number" value={item.unitPrice || ''} onChange={(e) => updateItem(item.id, 'unitPrice', parseFloat(e.target.value) || 0)} placeholder="5000" />
+                  <Input type="number" value={watchedItems?.[index]?.unitPrice || ''} onChange={(e) => updateItemTotal(index, 'unitPrice', parseFloat(e.target.value) || 0)} placeholder="5000" />
                 </div>
                 <div className="space-y-2">
                   <Label>Total</Label>
                   <div className="h-9 px-3 py-2 bg-secondary rounded-md text-sm font-medium">
-                    {formatCurrency(item.total)}
+                    {formatCurrency(watchedItems?.[index]?.total ?? 0)}
                   </div>
                 </div>
               </div>
             </div>
           ))}
+          {errors.items && !errors.items.root && <p className="text-xs text-destructive">{errors.items.message}</p>}
           <div className="flex justify-end pt-4 border-t">
             <div className="text-right">
               <p className="text-sm text-muted-foreground">Total Cotización</p>
@@ -277,16 +302,19 @@ export function QuotationForm() {
           <CardContent className="grid gap-4">
             <div className="space-y-2">
               <Label htmlFor="providerName">Nombre</Label>
-              <Input id="providerName" value={provider.name} onChange={(e) => setProvider({ ...provider, name: e.target.value })} placeholder="Jorge Vallejo" />
+              <Input id="providerName" {...register('provider.name')} placeholder="Jorge Vallejo" />
+              {errors.provider?.name && <p className="text-xs text-destructive">{errors.provider.name.message}</p>}
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="docNumber">Cédula</Label>
-                <Input id="docNumber" value={provider.documentNumber} onChange={(e) => setProvider({ ...provider, documentNumber: e.target.value })} placeholder="18.506.917" />
+                <Input id="docNumber" {...register('provider.documentNumber')} placeholder="18.506.917" />
+                {errors.provider?.documentNumber && <p className="text-xs text-destructive">{errors.provider.documentNumber.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Teléfono</Label>
-                <Input id="phone" value={provider.phone} onChange={(e) => setProvider({ ...provider, phone: e.target.value })} placeholder="311 344 0070" />
+                <Input id="phone" {...register('provider.phone')} placeholder="311 344 0070" />
+                {errors.provider?.phone && <p className="text-xs text-destructive">{errors.provider.phone.message}</p>}
               </div>
             </div>
           </CardContent>
@@ -298,11 +326,12 @@ export function QuotationForm() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="bankEntity">Entidad</Label>
-                <Input id="bankEntity" value={bankInfo.entity} onChange={(e) => setBankInfo({ ...bankInfo, entity: e.target.value })} placeholder="Bancolombia" />
+                <Input id="bankEntity" {...register('bankInfo.entity')} placeholder="Bancolombia" />
+                {errors.bankInfo?.entity && <p className="text-xs text-destructive">{errors.bankInfo.entity.message}</p>}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="accountType">Tipo de Cuenta</Label>
-                <Select value={bankInfo.accountType} onValueChange={(value) => setBankInfo({ ...bankInfo, accountType: value })}>
+                <Select value={watch('bankInfo.accountType')} onValueChange={(v) => setFormValue('bankInfo.accountType', v as 'Ahorros' | 'Corriente')}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Ahorros">Ahorros</SelectItem>
@@ -313,11 +342,13 @@ export function QuotationForm() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="accountNumber">Número de Cuenta</Label>
-              <Input id="accountNumber" value={bankInfo.accountNumber} onChange={(e) => setBankInfo({ ...bankInfo, accountNumber: e.target.value })} placeholder="91209711252" />
+              <Input id="accountNumber" {...register('bankInfo.accountNumber')} placeholder="91209711252" />
+              {errors.bankInfo?.accountNumber && <p className="text-xs text-destructive">{errors.bankInfo.accountNumber.message}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="accountHolder">Titular</Label>
-              <Input id="accountHolder" value={bankInfo.accountHolder} onChange={(e) => setBankInfo({ ...bankInfo, accountHolder: e.target.value })} placeholder="María Nathali Gómez Jiménez" />
+              <Input id="accountHolder" {...register('bankInfo.accountHolder')} placeholder="María Nathali Gómez Jiménez" />
+              {errors.bankInfo?.accountHolder && <p className="text-xs text-destructive">{errors.bankInfo.accountHolder.message}</p>}
             </div>
           </CardContent>
         </Card>
@@ -329,10 +360,10 @@ export function QuotationForm() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="notes">Observaciones</Label>
-            <Textarea id="notes" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Notas adicionales para la cotización..." rows={3} />
+            <Textarea id="notes" {...register('notes')} placeholder="Notas adicionales para la cotización..." rows={3} />
           </div>
           <div className="flex items-center gap-2">
-            <input type="checkbox" id="legalText" checked={includeLegalText} onChange={(e) => setIncludeLegalText(e.target.checked)} className="h-4 w-4 rounded border-input" />
+            <input type="checkbox" id="legalText" {...register('includeLegalText')} className="h-4 w-4 rounded border-input" />
             <Label htmlFor="legalText" className="text-sm font-normal">
               Incluir texto legal sobre retención en la fuente y seguridad social
             </Label>
@@ -342,14 +373,14 @@ export function QuotationForm() {
 
       {/* Actions */}
       <div className="flex flex-wrap gap-3">
-        <Button onClick={() => setShowPreview(true)} className="flex-1 sm:flex-none">
+        <Button type="button" onClick={() => setShowPreview(true)} className="flex-1 sm:flex-none">
           <Eye className="h-4 w-4 mr-2" /> Vista Previa
         </Button>
-        <Button variant="outline" onClick={handleSave} disabled={isSaving} className="flex-1 sm:flex-none">
+        <Button type="submit" variant="outline" disabled={isSaving} className="flex-1 sm:flex-none">
           <Save className="h-4 w-4 mr-2" />
           {isSaving ? 'Guardando...' : 'Guardar'}
         </Button>
       </div>
-    </div>
+    </form>
   )
 }

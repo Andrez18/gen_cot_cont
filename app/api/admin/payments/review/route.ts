@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/require-admin'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { sendEmail, paymentApprovedEmail, paymentRejectedEmail } from '@/lib/email'
+import { logger } from '@/lib/logger'
+import { createNotification } from '@/lib/notifications'
 
 const SUBSCRIPTION_DAYS = 30
 
@@ -33,7 +35,7 @@ export async function POST(req: NextRequest) {
     .select('*')
 
   if (updateError) {
-    return NextResponse.json({ error: updateError.message }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno al procesar la solicitud' }, { status: 500 })
   }
 
   if (!updatedRows || updatedRows.length === 0) {
@@ -79,7 +81,27 @@ export async function POST(req: NextRequest) {
   const { subject, html } = action === 'approve'
     ? paymentApprovedEmail(siteUrl)
     : paymentRejectedEmail(siteUrl)
-  await sendEmail({ to: paymentRequest.user_email, subject, html })
+  const emailResult = await sendEmail({ to: paymentRequest.user_email, subject, html })
+  if (!emailResult.sent) {
+    logger.warn('Email de notificación de pago no enviado', { userId: paymentRequest.user_id, action })
+  }
+
+  logger.audit(`Pago ${action === 'approve' ? 'aprobado' : 'rechazado'}`, {
+    userId: paymentRequest.user_id,
+    path: `/api/admin/payments/review`,
+    meta: { requestId, action, amount: paymentRequest.final_amount ?? paymentRequest.amount },
+  })
+
+  // Notificación in-app al usuario
+  await createNotification({
+    userId: paymentRequest.user_id,
+    type: action === 'approve' ? 'success' : 'warning',
+    title: action === 'approve' ? '¡Pago aprobado!' : 'Pago no confirmado',
+    message: action === 'approve'
+      ? 'Tu suscripción fue activada. Ya puedes generar documentos sin límites.'
+      : 'Tu comprobante de pago no pudo ser validado. Puedes volver a intentarlo.',
+    link: action === 'approve' ? '/history' : undefined,
+  })
 
   return NextResponse.json({ success: true })
 }

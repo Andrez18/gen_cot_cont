@@ -14,6 +14,7 @@
 // y sigue, para que la app nunca se rompa por un correo que no se pudo
 // enviar (aprobar/rechazar un pago no debe fallar por esto).
 import nodemailer from 'nodemailer'
+import { withRetry } from './retry'
 
 let cachedTransporter: ReturnType<typeof nodemailer.createTransport> | null = null
 
@@ -51,15 +52,17 @@ export async function sendEmail({
   }
 
   try {
-    await transporter.sendMail({
-      from: `CotiFactura <${from}>`,
-      to,
-      subject,
-      html,
-    })
+    await withRetry(() =>
+      transporter.sendMail({
+        from: `CotiFactura <${from}>`,
+        to,
+        subject,
+        html,
+      }),
+    )
     return { sent: true }
   } catch (err) {
-    console.error('sendEmail: error al enviar por Gmail SMTP', err)
+    console.error('sendEmail: error al enviar por Gmail SMTP tras reintentos', err)
     return { sent: false }
   }
 }

@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
     supabaseAdmin.from('expense_records').select('id', { count: 'exact', head: true }),
   ])
 
-  if (usersRes.error) return NextResponse.json({ error: usersRes.error.message }, { status: 500 })
+  if (usersRes.error) return NextResponse.json({ error: 'Error al obtener estadísticas' }, { status: 500 })
 
   const users = usersRes.data.users
   const totalUsers = users.length

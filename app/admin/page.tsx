@@ -13,8 +13,10 @@ import {
   Receipt,
   TrendingUp,
   Sparkles,
+  Shield,
 } from 'lucide-react'
 import { PillBarChart } from '@/components/admin/pill-bar-chart'
+import { MFASettings } from '@/components/admin/mfa-settings'
 
 interface Totals {
   totalUsers: number
@@ -281,6 +283,15 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Seguridad: 2FA */}
+      <div className="max-w-lg">
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold mb-4">
+          <Shield className="h-4 w-4 text-white/60" />
+          Seguridad de la cuenta admin
+        </h2>
+        <MFASettings />
+      </div>
     </div>
   )
 }

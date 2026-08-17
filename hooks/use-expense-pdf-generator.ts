@@ -41,7 +41,7 @@ interface Registro {
   fecha?: string
   monto?: number
   tipo?: 'ingreso' | 'gasto'
-  foto_url?: string
+  foto_url?: string | null
 }
 
 interface Informe {
@@ -422,8 +422,7 @@ export function useExpensePdfGenerator() {
       pdf.setTextColor(...mainColor)
       pdf.text(formatCurrency(balance), PAGE_W - MARGIN - 5, y + 10.5, { align: 'right' })
 
-      pdf.save(`${opts.filename}.pdf`)
-      return true
+      return pdf.output('blob')
     } catch (error) {
       throw error
     } finally {

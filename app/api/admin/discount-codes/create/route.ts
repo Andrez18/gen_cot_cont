@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/require-admin'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { logger } from '@/lib/logger'
 
 const CODE_REGEX = /^[A-Z0-9-]{3,20}$/
 
@@ -40,8 +41,13 @@ export async function POST(req: NextRequest) {
     if (error.code === '23505') {
       return NextResponse.json({ error: 'Ya existe un código con ese nombre' }, { status: 409 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Error al crear el código de descuento' }, { status: 500 })
   }
+
+  logger.audit('Código de descuento creado', {
+    path: '/api/admin/discount-codes/create',
+    meta: { code, type, value, createdBy: admin.email },
+  })
 
   return NextResponse.json({ success: true })
 }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/require-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { applyDiscount } from '@/lib/discount'
+import { logger } from '@/lib/logger'
 
 const PRICE_COP = Number(process.env.SUBSCRIPTION_PRICE_COP ?? process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_COP ?? '30000')
 
@@ -144,6 +145,12 @@ export async function POST(req: NextRequest) {
     // puede rechazar el insert por una condición de carrera; se informa igual.
     return NextResponse.json({ error: 'No se pudo registrar el pago. Intenta de nuevo.' }, { status: 409 })
   }
+
+  logger.audit('Solicitud de pago enviada', {
+    userId: user.id,
+    path: '/api/payments/submit',
+    meta: { reference, finalAmount, discountCode: redeemedCode },
+  })
 
   return NextResponse.json({ success: true, finalAmount, discountAmount })
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { requireAdmin } from '@/lib/require-admin'
 import { createAdminClient } from '@/lib/supabase-admin'
+import { logger } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
   const admin = await requireAdmin(req)
@@ -27,7 +28,13 @@ export async function POST(req: NextRequest) {
   }
 
   const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  if (error) return NextResponse.json({ error: 'No se pudo eliminar el usuario' }, { status: 500 })
+
+  logger.audit('Usuario eliminado por admin', {
+    userId,
+    path: '/api/admin/users/delete',
+    meta: { deletedBy: admin.email },
+  })
 
   return NextResponse.json({ success: true })
 }

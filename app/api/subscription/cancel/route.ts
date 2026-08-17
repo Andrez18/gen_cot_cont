@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     if (error.message?.includes('NO_ACTIVE_SUBSCRIPTION')) {
       return NextResponse.json({ error: 'No tienes una suscripción activa para cancelar' }, { status: 400 })
     }
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Error al cancelar la suscripción' }, { status: 500 })
   }
 
   return NextResponse.json({ success: true })

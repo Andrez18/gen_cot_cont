@@ -12,6 +12,11 @@ export async function GET(req: NextRequest) {
   const path = req.nextUrl.searchParams.get('path')
   if (!path) return NextResponse.json({ error: 'Falta el parámetro path' }, { status: 400 })
 
+  // Sanitizar contra path traversal
+  if (path.includes('..') || path.includes('%2e%2e') || path.includes('%2E%2E')) {
+    return NextResponse.json({ error: 'Ruta inválida' }, { status: 400 })
+  }
+
   const supabaseAdmin = createAdminClient()
 
   // Confirmamos que el pedido de firma corresponde a un payment_request real,

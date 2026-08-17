@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import type { Quotation, Invoice, ClientInfo, ProviderInfo, LineItem, BankInfo } from '@/lib/types'
 
 /* =========================
    TIPOS
@@ -26,12 +27,76 @@ export interface Tool {
   updated_at: string
 }
 
+/** Fila cruda de la tabla quotations en Supabase (snake_case). */
+export interface SupabaseQuotationRow {
+  id: string
+  user_id: string
+  number: string
+  date: string
+  city: string
+  client: ClientInfo
+  provider: ProviderInfo
+  items: LineItem[]
+  total: number
+  bank_info: BankInfo
+  notes: string | null
+  legal_text: string | null
+  created_at: string
+}
+
+/** Fila cruda de la tabla invoices en Supabase (snake_case). */
+export interface SupabaseInvoiceRow {
+  id: string
+  user_id: string
+  number: string
+  date: string
+  city: string
+  client: ClientInfo
+  provider: ProviderInfo
+  concept: string
+  amount: number
+  amount_in_words: string
+  bank_info: BankInfo
+  created_at: string
+}
+
+/** Fila cruda de la tabla expense_records en Supabase (snake_case). */
+export interface SupabaseExpenseRecordRow {
+  id: string
+  user_id: string
+  report_id: string | null
+  descripcion: string
+  monto: number
+  cat: string
+  tipo: 'gasto' | 'ingreso'
+  fecha: string
+  foto_url: string | null
+  created_at: string
+}
+
+/** Fila cruda de la tabla expense_reports en Supabase (snake_case). */
+export interface SupabaseExpenseReportRow {
+  id: string
+  user_id: string
+  fecha: string
+  ingresos: number
+  gastos: number
+  balance: number
+  gastos_por_cat: Record<string, number>
+  total_registros: number
+  expense_records: SupabaseExpenseRecordRow[]
+  created_at: string
+  // Aliases camelCase que la UI puede recibir del servidor
+  gastosPorCat?: Record<string, number>
+  totalRegistros?: number
+}
+
 /* =========================
    QUOTATIONS
 ========================= */
 
 export function useQuotations() {
-  const [quotations, setQuotations] = useState<any[]>([])
+  const [quotations, setQuotations] = useState<SupabaseQuotationRow[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -62,7 +127,7 @@ export function useQuotations() {
     setIsLoadingMore(false)
   }, [fetchPage, quotations.length, hasMore, isLoadingMore])
 
-  const saveQuotation = useCallback(async (q: any) => {
+  const saveQuotation = useCallback(async (q: Quotation) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: new Error('No autenticado') }
 
@@ -99,7 +164,7 @@ export function useQuotations() {
 ========================= */
 
 export function useInvoices() {
-  const [invoices, setInvoices] = useState<any[]>([])
+  const [invoices, setInvoices] = useState<SupabaseInvoiceRow[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -130,7 +195,7 @@ export function useInvoices() {
     setIsLoadingMore(false)
   }, [fetchPage, invoices.length, hasMore, isLoadingMore])
 
-  const saveInvoice = useCallback(async (inv: any) => {
+  const saveInvoice = useCallback(async (inv: Invoice) => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return { data: null, error: new Error('No autenticado') }
 
@@ -166,7 +231,7 @@ export function useInvoices() {
 ========================= */
 
 export function useExpenseRecords() {
-  const [records, setRecords] = useState<any[]>([])
+  const [records, setRecords] = useState<SupabaseExpenseRecordRow[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
 
   useEffect(() => {
@@ -239,7 +304,7 @@ export function useExpenseRecords() {
 ========================= */
 
 export function useExpenseReports() {
-  const [reports, setReports] = useState<any[]>([])
+  const [reports, setReports] = useState<SupabaseExpenseReportRow[]>([])
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -320,7 +385,6 @@ export function usePhotoUpload() {
         .upload(fileName, file, { contentType: file.type })
 
       if (error) {
-        console.error('Error subiendo foto:', error.message)
         return null
       }
 
@@ -380,7 +444,6 @@ export function usePaymentProofUpload() {
         .upload(fileName, file, { contentType: file.type })
 
       if (error) {
-        console.error('Error subiendo comprobante:', error.message)
         return null
       }
 

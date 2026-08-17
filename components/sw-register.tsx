@@ -16,7 +16,7 @@ export function SwRegister() {
 
     navigator.serviceWorker
       .register('/sw.js')
-      .catch((error) => console.error('No se pudo registrar el service worker:', error))
+      .catch(() => {/* silent */})
   }, [])
 
   return null

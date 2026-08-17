@@ -8,9 +8,21 @@ __v0_jsx-dev-runtime.ts
 next.user-config.*
 
 # Environment variables
+.env
+.env.local
 .env*.local
+
+# TypeScript build info
+*.tsbuildinfo
+
+# IDE
+.idea/
+.vscode/
 
 # Common ignores
 node_modules
 .next/
 .DS_Store
+
+# pnpm
+pnpm-debug.log*
