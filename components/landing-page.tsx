@@ -688,11 +688,11 @@ export function LandingPage() {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="mailto:hola@cotifactura.app"
+                  href="mailto:cotifactura@gmail.com"
                   className="inline-flex items-center gap-2.5 text-[13.5px] text-white/55 hover:text-white transition-colors"
                 >
                   <Mail className="h-4 w-4 text-white/35" strokeWidth={1.75} />
-                  hola@cotifactura.app
+                  cotifactura@gmail.com
                 </a>
               </li>
             </ul>

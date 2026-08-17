@@ -23,6 +23,7 @@ import {
   SquarePlus,
   Smartphone,
   Monitor,
+  LayoutDashboard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -50,6 +51,7 @@ interface HeaderProps {
 const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase().trim()
 
 const ADMIN_LINKS = [
+  { href: '/admin',                 label: 'Panel de administración', icon: LayoutDashboard },
   { href: '/admin/payments',        label: 'Pagos pendientes',    icon: ShieldCheck },
   { href: '/admin/discount-codes',  label: 'Códigos de descuento', icon: Tag },
   { href: '/admin/users',           label: 'Usuarios',             icon: Users },
@@ -89,7 +91,6 @@ export function Header({ onSettingsClick }: HeaderProps) {
       }
       return
     }
-    // iOS u otros navegadores sin prompt nativo: mostramos instrucciones.
     setShowIOSInstructions(true)
   }
 
@@ -259,7 +260,14 @@ export function Header({ onSettingsClick }: HeaderProps) {
                           {user.email?.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-xs font-medium text-muted-foreground">Conectado como</p>
+                          <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                            Conectado como
+                            {isAdmin && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-1.5 py-0.5 text-[10px] font-semibold text-background">
+                                <ShieldCheck className="h-2.5 w-2.5" /> Admin
+                              </span>
+                            )}
+                          </p>
                           <p className="text-sm font-semibold truncate">{user.email}</p>
                         </div>
                       </div>
