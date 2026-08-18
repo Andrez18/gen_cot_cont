@@ -14,6 +14,8 @@ import {
   TrendingUp,
   Sparkles,
   Shield,
+  Layers,
+  X,
 } from 'lucide-react'
 import { PillBarChart } from '@/components/admin/pill-bar-chart'
 import { PaymentStatusChart } from '@/components/admin/payment-status-chart'
@@ -60,7 +62,33 @@ interface DiscountCodeRow {
 const cop = (n: number) => `$${n.toLocaleString('es-CO')}`
 const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
 
-function StatCard({
+function Panel({
+  title,
+  icon: Icon,
+  children,
+  className = '',
+}: {
+  title?: string
+  icon?: React.ElementType
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={`rounded-3xl border border-white/8 bg-linear-to-b from-white/4.5 to-white/1.5 p-6 ${className}`}
+    >
+      {title && (
+        <h2 className="flex items-center gap-2 text-[15px] font-semibold mb-5">
+          {Icon && <Icon className="h-4 w-4 text-white/60" />}
+          {title}
+        </h2>
+      )}
+      {children}
+    </div>
+  )
+}
+
+function Stat({
   icon: Icon,
   label,
   value,
@@ -72,16 +100,61 @@ function StatCard({
   sublabel?: string
 }) {
   return (
-    <div className="rounded-3xl border border-white/8 bg-linear-to-b from-white/4.5 to-white/1.5 px-5 py-5">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[12px] font-medium text-white/40">{label}</p>
-          <p className="mt-1.5 text-2xl font-semibold tracking-[-0.02em] truncate">{value}</p>
-          {sublabel && <p className="mt-1 text-[11.5px] text-white/35">{sublabel}</p>}
+    <div className="flex items-start gap-3 py-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/8 text-white/60">
+        <Icon className="h-3.5 w-3.5" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11.5px] font-medium text-white/40">{label}</p>
+        <p className="mt-0.5 text-lg font-semibold tracking-[-0.02em] truncate">{value}</p>
+        {sublabel && <p className="text-[11px] text-white/35">{sublabel}</p>}
+      </div>
+    </div>
+  )
+}
+
+/** Botón flotante para abrir la seguridad de la cuenta admin */
+function SecurityFab({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label="Seguridad de la cuenta admin"
+      className="fixed bottom-6 right-6 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-[0_8px_30px_rgba(0,0,0,0.5)] transition-transform hover:scale-105 active:scale-95"
+    >
+      <Shield className="h-5 w-5" />
+    </button>
+  )
+}
+
+/** Modal con la configuración de 2FA */
+function SecurityModal({ onClose }: { onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl border border-white/10 bg-[#0a0a0a] bg-linear-to-b from-white/6 to-white/1.5 p-6 max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="flex items-center gap-2 text-[15px] font-semibold">
+            <Shield className="h-4 w-4 text-white/60" />
+            Seguridad de la cuenta admin
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label="Cerrar"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/8 text-white/60 hover:bg-white/12"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/8 text-white/70">
-          <Icon className="h-4 w-4" />
-        </div>
+        <MFASettings />
       </div>
     </div>
   )
@@ -95,6 +168,7 @@ export default function AdminDashboardPage() {
   const [topDiscountCodes, setTopDiscountCodes] = useState<DiscountCodeRow[]>([])
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
+  const [securityOpen, setSecurityOpen] = useState(false)
 
   const load = useCallback(async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -141,7 +215,7 @@ export default function AdminDashboardPage() {
   }))
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-center gap-2.5">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-white/8">
           <Sparkles className="h-4.5 w-4.5" />
@@ -152,155 +226,143 @@ export default function AdminDashboardPage() {
         </div>
       </div>
 
-      {/* Tarjetas de estadísticas */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard
-          icon={Users}
-          label="Usuarios totales"
-          value={totals.totalUsers.toLocaleString('es-CO')}
-          sublabel={`+${totals.newUsersLast7d} en 7 días`}
-        />
-        <StatCard
-          icon={UserPlus}
-          label="Nuevos (30 días)"
-          value={totals.newUsersLast30d.toLocaleString('es-CO')}
-          sublabel="Registros recientes"
-        />
-        <StatCard
-          icon={TrendingUp}
-          label="Suscripciones activas"
-          value={totals.activeSubscriptions.toLocaleString('es-CO')}
-          sublabel={`${totals.canceledSubscriptions} canceladas`}
-        />
-        <StatCard
-          icon={Clock}
-          label="Pagos pendientes"
-          value={totals.pendingPayments.toLocaleString('es-CO')}
-          sublabel="Por revisar"
-        />
-        <StatCard
-          icon={Wallet}
-          label="Ingresos este mes"
-          value={cop(totals.revenueThisMonth)}
-          sublabel="Pagos aprobados"
-        />
-        <StatCard
-          icon={Wallet}
-          label="Ingresos totales"
-          value={cop(totals.totalRevenue)}
-          sublabel="Histórico aprobado"
-        />
-        <StatCard
-          icon={Tag}
-          label="Códigos activos"
-          value={totals.activeDiscountCodes.toLocaleString('es-CO')}
-          sublabel={`de ${totals.totalDiscountCodes} creados`}
-        />
-        <StatCard
-          icon={FileText}
-          label="Documentos generados"
-          value={(totals.totalQuotations + totals.totalInvoices).toLocaleString('es-CO')}
-          sublabel={`${totals.totalQuotations} cotiz. · ${totals.totalInvoices} cuentas`}
-        />
-      </div>
+      <Panel title="Estadísticas clave" icon={Layers}>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-1">
+          <Stat
+            icon={Users}
+            label="Usuarios totales"
+            value={totals.totalUsers.toLocaleString('es-CO')}
+            sublabel={`+${totals.newUsersLast7d} en 7 días`}
+          />
+          <Stat
+            icon={UserPlus}
+            label="Nuevos (30 días)"
+            value={totals.newUsersLast30d.toLocaleString('es-CO')}
+            sublabel="Registros recientes"
+          />
+          <Stat
+            icon={TrendingUp}
+            label="Suscripciones activas"
+            value={totals.activeSubscriptions.toLocaleString('es-CO')}
+            sublabel={`${totals.canceledSubscriptions} canceladas`}
+          />
+          <Stat
+            icon={Clock}
+            label="Pagos pendientes"
+            value={totals.pendingPayments.toLocaleString('es-CO')}
+            sublabel="Por revisar"
+          />
+          <Stat
+            icon={Tag}
+            label="Códigos activos"
+            value={totals.activeDiscountCodes.toLocaleString('es-CO')}
+            sublabel={`de ${totals.totalDiscountCodes} creados`}
+          />
+          <Stat
+            icon={Wallet}
+            label="Ingresos este mes"
+            value={cop(totals.revenueThisMonth)}
+            sublabel="Pagos aprobados"
+          />
+          <Stat
+            icon={Wallet}
+            label="Ingresos totales"
+            value={cop(totals.totalRevenue)}
+            sublabel="Histórico aprobado"
+          />
+          <Stat
+            icon={FileText}
+            label="Cotizaciones"
+            value={totals.totalQuotations.toLocaleString('es-CO')}
+            sublabel="Generadas"
+          />
+          <Stat
+            icon={Receipt}
+            label="Cuentas de cobro"
+            value={totals.totalInvoices.toLocaleString('es-CO')}
+            sublabel="Generadas"
+          />
+          <Stat
+            icon={Receipt}
+            label="Gastos / ingresos"
+            value={totals.totalExpenseRecords.toLocaleString('es-CO')}
+            sublabel="Movimientos"
+          />
+        </div>
+      </Panel>
 
-      {/* Gráficos tipo cápsula */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        <PillBarChart
-          label="Registros de la semana"
-          data={weeklySignups}
-          formatValue={(v) => `${v} usuarios`}
-        />
-        <PillBarChart
-          label="Ingresos aprobados de la semana"
-          data={weeklyRevenue}
-          formatValue={(v) => cop(v)}
-        />
-      </div>
-
-      {/* Estado de pagos */}
-      <PaymentStatusChart
-        pending={totals.pendingPayments}
-        approved={totals.approvedCount}
-        rejected={totals.rejectedCount}
-      />
-
-      {/* Actividad de la plataforma + últimos usuarios */}
-      <div className="grid lg:grid-cols-2 gap-4">
-        <div className="rounded-3xl border border-white/8 bg-linear-to-b from-white/4.5 to-white/1.5 p-6">
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold mb-4">
-            <Receipt className="h-4 w-4 text-white/60" />
-            Actividad de la plataforma
-          </h2>
-          <div className="space-y-0.5">
-            <div className="flex items-center justify-between text-sm py-2.5 border-b border-white/8">
-              <span className="text-white/50">Cotizaciones generadas</span>
-              <span className="font-semibold">{totals.totalQuotations.toLocaleString('es-CO')}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm py-2.5 border-b border-white/8">
-              <span className="text-white/50">Cuentas de cobro generadas</span>
-              <span className="font-semibold">{totals.totalInvoices.toLocaleString('es-CO')}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm py-2.5">
-              <span className="text-white/50">Movimientos de gastos/ingresos</span>
-              <span className="font-semibold">{totals.totalExpenseRecords.toLocaleString('es-CO')}</span>
-            </div>
+      <Panel title="Actividad de la semana" icon={TrendingUp}>
+        <div className="flex flex-col lg:flex-row divide-y lg:divide-y-0 lg:divide-x divide-white/8">
+          <div className="lg:flex-1 lg:pr-6 pb-6 lg:pb-0">
+            <PillBarChart
+              label="Registros"
+              data={weeklySignups}
+              formatValue={(v) => `${v} usuarios`}
+            />
+          </div>
+          <div className="lg:flex-1 lg:px-6 py-6 lg:py-0">
+            <PillBarChart
+              label="Ingresos aprobados"
+              data={weeklyRevenue}
+              formatValue={(v) => cop(v)}
+            />
+          </div>
+          <div className="lg:flex-1 lg:pl-6 pt-6 lg:pt-0">
+            <PaymentStatusChart
+              pending={totals.pendingPayments}
+              approved={totals.approvedCount}
+              rejected={totals.rejectedCount}
+            />
           </div>
         </div>
+      </Panel>
 
-        <div className="rounded-3xl border border-white/8 bg-linear-to-b from-white/4.5 to-white/1.5 p-6">
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold mb-4">
-            <UserPlus className="h-4 w-4 text-white/60" />
-            Últimos registros
-          </h2>
-          <div className="space-y-0.5">
-            {recentUsers.length === 0 && (
-              <p className="text-sm text-white/40">Sin registros aún.</p>
-            )}
-            {recentUsers.map((u, i) => (
-              <div
-                key={u.id}
-                className={`flex items-center justify-between text-sm py-2.5 ${i !== recentUsers.length - 1 ? 'border-b border-white/8' : ''}`}
-              >
-                <span className="truncate text-white/85">{u.full_name || u.email}</span>
-                <span className="text-[12px] text-white/35 shrink-0 ml-2">
-                  {new Date(u.created_at).toLocaleDateString('es-CO')}
-                </span>
+      <Panel title="Actividad reciente" icon={UserPlus}>
+        <div className="grid lg:grid-cols-2 gap-8 lg:gap-6 divide-y lg:divide-y-0 lg:divide-x divide-white/8">
+          <div className="lg:pr-6">
+            <p className="text-[12px] font-medium text-white/40 mb-2">Últimos registros</p>
+            <div className="space-y-0.5">
+              {recentUsers.length === 0 && (
+                <p className="text-sm text-white/40">Sin registros aún.</p>
+              )}
+              {recentUsers.map((u, i) => (
+                <div
+                  key={u.id}
+                  className={`flex items-center justify-between text-sm py-2.5 ${i !== recentUsers.length - 1 ? 'border-b border-white/8' : ''}`}
+                >
+                  <span className="truncate text-white/85">{u.full_name || u.email}</span>
+                  <span className="text-[12px] text-white/35 shrink-0 ml-2">
+                    {new Date(u.created_at).toLocaleDateString('es-CO')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:pl-6 pt-6 lg:pt-0">
+            <p className="text-[12px] font-medium text-white/40 mb-2">Códigos más usados</p>
+            {topDiscountCodes.length === 0 ? (
+              <p className="text-sm text-white/40">Sin uso registrado aún.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {topDiscountCodes.map((c) => (
+                  <span
+                    key={c.code}
+                    className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium ${
+                      c.active ? 'bg-white text-black' : 'bg-white/8 text-white/50'
+                    }`}
+                  >
+                    {c.code} · {c.times_used} usos
+                  </span>
+                ))}
               </div>
-            ))}
+            )}
           </div>
         </div>
-      </div>
+      </Panel>
 
-      {topDiscountCodes.length > 0 && (
-        <div className="rounded-3xl border border-white/8 bg-linear-to-b from-white/4.5 to-white/1.5 p-6">
-          <h2 className="flex items-center gap-2 text-[15px] font-semibold mb-4">
-            <Tag className="h-4 w-4 text-white/60" />
-            Códigos de descuento más usados
-          </h2>
-          <div className="flex flex-wrap gap-2">
-            {topDiscountCodes.map((c) => (
-              <span
-                key={c.code}
-                className={`rounded-full px-3 py-1.5 text-[12.5px] font-medium ${
-                  c.active ? 'bg-white text-black' : 'bg-white/8 text-white/50'
-                }`}
-              >
-                {c.code} · {c.times_used} usos
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Seguridad: 2FA */}
-      <div className="max-w-lg">
-        <h2 className="flex items-center gap-2 text-[15px] font-semibold mb-4">
-          <Shield className="h-4 w-4 text-white/60" />
-          Seguridad de la cuenta admin
-        </h2>
-        <MFASettings />
-      </div>
+      <SecurityFab onClick={() => setSecurityOpen(true)} />
+      {securityOpen && <SecurityModal onClose={() => setSecurityOpen(false)} />}
     </div>
   )
 }
