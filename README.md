@@ -1,5 +1,73 @@
 # gen_cot_cont
 
+## Nómina de trabajadores (nuevo)
+
+Nueva página `/payroll` para liquidar el pago de los trabajadores con la
+normativa colombiana vigente (valores verificados para 2026).
+
+### 1. Ejecutar la migración
+En el SQL Editor de Supabase ejecuta `supabase/migrations/20260821_payroll.sql`.
+Esta migración crea dos tablas con RLS (cada usuario solo ve lo suyo):
+- `payroll_employees`: trabajadores con su forma de pago (por mes,
+  quincenal, por día, por hora o por obra/tarea), tarifas y si les aplica
+  auxilio de transporte.
+- `payroll_runs`: cada liquidación guardada, con el detalle por trabajador
+  congelado en la columna jsonb `lines`.
+
+### 2. Cómo funciona
+- Formas de pago soportadas: **mensual** y **quincenal** (se ingresa el
+  sueldo mensual y se prorratea por días), **semanal** (pago por semana,
+  prorrateado sobre una semana laboral de 6 días), **por día** (jornal),
+  **por hora** y **por obra/tarea** (monto fijo del periodo).
+- Por trabajador se registran días trabajados, **días festivos/dominicales
+  trabajados** con **pago por día editable** (por defecto $150.000,
+  constante `PAGO_FESTIVO_DEFAULT`), horas ordinarias (si es por hora),
+  horas extra y recargo nocturno, bonificaciones y otras deducciones.
+- **Descuentos opcionales**: cada trabajador tiene los checkboxes "Descontar
+  salud (4 %)" y "Descontar pensión (4 %)" (columnas `deduct_health` /
+  `deduct_pension` en `payroll_employees`). Al desmarcarlos —p. ej. cuando el
+  trabajador ya tiene EPS/AFP cubierta por otra parte— la liquidación muestra
+  "ya cubierta" con valor $0; sin pensión tampoco se cobra el FSP.
+- El motor (`lib/payroll.ts`) calcula con los valores legales 2026:
+  - SMLMV $1.750.905 y auxilio de transporte $249.095 proporcional a días
+    (solo hasta 2 SMLMV).
+  - Valor hora con divisor **210** (jornada de 42 h desde jul-2026).
+  - Horas extra Ley 2466 de 2025: extra diurna ×1,25, extra nocturna ×1,75
+    y recargo nocturno +35 % (7 p.m.–6 a.m.). Los festivos NO usan recargo
+    por hora: se liquidan como días completos con la tarifa acordada.
+  - Deducciones: salud 4 % y pensión 4 % sobre el IBC (sin auxilio), FSP
+    según escala desde 4 SMLMV (o 4 % sobre el excedente desde 20 SMLMV)
+    y techo de IBC en 25 SMLMV.
+  - Estimado de prestaciones proporcionales: cesantías, intereses, prima
+    y vacaciones (informativo, no se descuenta del neto).
+- El PDF se genera client-side (vista oculta capturada con html2canvas) y
+  muestra una sola tabla resumen: **Trabajador | Forma de pago | Días
+  trabajados (+ festivos) | Valor por día | Neto a pagar**. Los bloques
+  completos saltan a la página siguiente sin quedar cortados
+  (`generatePdfNoBreak`).
+- Cada nómina tiene un **nombre editable** ("Nómina {periodo}" por defecto,
+  p. ej. "Nómina 1 – 15 de agosto de 2026"): es el título del PDF y del
+  historial (columna `name` en `payroll_runs`; las viejas sin nombre muestran
+  su código NOM-...).
+- La primera vez que un usuario entra a la función se abre automáticamente
+  un **tutorial en 5 pasos** (`components/payroll-tutorial-modal.tsx`);
+  queda marcado como visto en localStorage (`cotifactura_payroll_tutorial_v1`)
+  y puede volver a verse con el botón "Ver tutorial".
+
+### 3. Notificar a todos los usuarios
+Para anunciar la función (o cualquier otra) corre una sola vez:
+
+```
+node scripts/broadcast-payroll.mjs
+```
+
+El script usa la `service_role` key del `.env`, crea una notificación
+in-app para cada usuario y además envía Web Push a quien tenga la app
+instalada (si hay llaves VAPID). Los endpoints push inválidos se limpian
+solo.
+
+> Los cálculos son orientativos y no constituyen asesoría contable o laboral.
+
 ## Firma personal por usuario (nuevo)
 
 Antes todos los documentos usaban la misma imagen estática

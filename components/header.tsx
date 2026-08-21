@@ -24,6 +24,7 @@ import {
   Smartphone,
   Monitor,
   LayoutDashboard,
+  Wallet,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -64,6 +65,7 @@ const NAV_LINKS = [
   { href: '/invoice/new',    label: 'Nueva Cuenta',       icon: Receipt },
   { href: '/expenses/new',   label: 'Gastos',             icon: TrendingUp },
   { href: '/tools',   label: 'Herramientas',             icon: TrendingUp },
+  { href: '/payroll',        label: 'Nómina',             icon: Wallet },
   { href: '/history',        label: 'Historial',          icon: History },
   { href: '/settings',       label: 'Configuración',      icon: Settings },
 ]
