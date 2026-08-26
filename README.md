@@ -40,11 +40,17 @@ Esta migración crea dos tablas con RLS (cada usuario solo ve lo suyo):
     y techo de IBC en 25 SMLMV.
   - Estimado de prestaciones proporcionales: cesantías, intereses, prima
     y vacaciones (informativo, no se descuenta del neto).
-- El PDF se genera client-side (vista oculta capturada con html2canvas) y
-  muestra una sola tabla resumen: **Trabajador | Forma de pago | Días
-  trabajados (+ festivos) | Valor por día | Neto a pagar**. Los bloques
-  completos saltan a la página siguiente sin quedar cortados
-  (`generatePdfNoBreak`).
+- El PDF de nómina se dibuja **directamente con jsPDF** (`lib/payroll-pdf.ts`):
+  el texto es real, se puede seleccionar y copiar como en cualquier PDF
+  (las cotizaciones/cuentas siguen siendo imagen capturada). Tabla resumen:
+  **Trabajador | Forma de pago | Días (+ festivos) | Valor por día | Neto a pagar**,
+  con paginación fila a fila para que nada quede cortado.
+- Pie de página: "Generado con CotiFactura" es un **enlace clicable** a la app.
+  Cada usuario puede ocultar esa marca desde **Configuración → Documentos**
+  (columna `show_branding` en `user_settings`; también afecta herramientas e
+  historial).
+- La **cédula del trabajador es opcional**: solo aparece en el PDF si está
+  diligenciada.
 - Cada nómina tiene un **nombre editable** ("Nómina {periodo}" por defecto,
   p. ej. "Nómina 1 – 15 de agosto de 2026"): es el título del PDF y del
   historial (columna `name` en `payroll_runs`; las viejas sin nombre muestran

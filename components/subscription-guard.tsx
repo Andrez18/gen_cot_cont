@@ -4,10 +4,9 @@ import { useEffect, useRef } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useSubscription } from '@/hooks/use-subscription'
 import { usePushRegistration } from '@/hooks/use-push-registration'
+import { useIsAdmin } from '@/hooks/use-is-admin'
 import { usePathname } from 'next/navigation'
 import { SubscriptionPaywall } from './subscription-paywall'
-
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase().trim()
 
 // Rutas públicas que no requieren suscripción
 const PUBLIC_ROUTES = [
@@ -22,16 +21,19 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const { status, refresh } = useSubscription()
   const { register } = usePushRegistration()
+  const { isAdmin } = useIsAdmin()
   const pathname = usePathname()
   const pushRegistered = useRef(false)
 
-  // Registrar push notifications una sola vez cuando el usuario tiene sesión activa
+  // Registrar push notifications una sola vez cuando el usuario tiene sesión activa.
+  // El admin también debe recibir pushes (avisos de nuevos pagos), aunque no
+  // tenga suscripción activa él mismo.
   useEffect(() => {
-    if (user && status === 'active' && !pushRegistered.current) {
+    if (user && (status === 'active' || isAdmin) && !pushRegistered.current) {
       pushRegistered.current = true
       register()
     }
-  }, [user, status, register])
+  }, [user, status, isAdmin, register])
 
   // Permitir acceso a rutas públicas sin verificación de suscripción
   const isPublicRoute = PUBLIC_ROUTES.some(route => pathname.startsWith(route))
@@ -39,7 +41,6 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>
   }
 
-  const isAdmin = !!user?.email && !!ADMIN_EMAIL && user.email.toLowerCase() === ADMIN_EMAIL
   if (isAdmin) return <>{children}</>
 
   if (status === 'loading') {

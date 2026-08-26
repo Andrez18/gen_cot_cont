@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   Tag,
   Users,
+  UserCog,
   Download,
   Share,
   SquarePlus,
@@ -44,19 +45,19 @@ import { useAuth } from '@/hooks/use-auth'
 import { useNotification } from '@/hooks/use_notification'
 import { useTheme } from 'next-themes'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
+import { useIsAdmin } from '@/hooks/use-is-admin'
 import { NotificationCenter } from '@/components/notification-center'
 
 interface HeaderProps {
   onSettingsClick?: () => void
 }
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase().trim()
-
 const ADMIN_LINKS = [
   { href: '/admin',                 label: 'Panel de administración', icon: LayoutDashboard },
   { href: '/admin/payments',        label: 'Pagos pendientes',    icon: ShieldCheck },
   { href: '/admin/discount-codes',  label: 'Códigos de descuento', icon: Tag },
   { href: '/admin/users',           label: 'Usuarios',             icon: Users },
+  { href: '/admin/admins',          label: 'Administradores',      icon: UserCog },
 ]
 
 const NAV_LINKS = [
@@ -76,8 +77,7 @@ export function Header({ onSettingsClick }: HeaderProps) {
   const { theme, setTheme } = useTheme()
   const { installed, isIOS, canInstall, hasNativePrompt, promptInstall } = usePwaInstall()
   const [showIOSInstructions, setShowIOSInstructions] = useState(false)
-
-  const isAdmin = !!user?.email && !!ADMIN_EMAIL && user.email.toLowerCase() === ADMIN_EMAIL
+  const { isAdmin } = useIsAdmin()
 
   const handleSignOut = async () => {
     await signOut()

@@ -24,6 +24,9 @@ export function useSettings() {
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null)
   const [pendingSignatureFile, setPendingSignatureFile] = useState<File | null>(null)
 
+  // Mostrar la marca "Generado con CotiFactura" en los PDF generados
+  const [showBranding, setShowBranding] = useState(true)
+
   const refreshSignatureUrl = useCallback(async (path: string | null) => {
     if (!path) {
       setSignatureUrl(null)
@@ -64,6 +67,7 @@ export function useSettings() {
           setSignaturePath(data.signature_path)
           await refreshSignatureUrl(data.signature_path)
         }
+        setShowBranding(data.show_branding !== false)
       }
       setIsLoaded(true)
     }
@@ -112,6 +116,7 @@ export function useSettings() {
         bank_info: bankInfo,
         client_info: clientInfo,
         signature_path: newPath,
+        show_branding: showBranding,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id' })
 
@@ -124,7 +129,7 @@ export function useSettings() {
     }
 
     return { error }
-  }, [providerInfo, bankInfo, clientInfo, pendingSignatureFile, signaturePath, refreshSignatureUrl])
+  }, [providerInfo, bankInfo, clientInfo, pendingSignatureFile, signaturePath, refreshSignatureUrl, showBranding])
 
   const removeSignature = useCallback(async () => {
     if (signaturePath) {
@@ -149,5 +154,8 @@ export function useSettings() {
     pendingSignatureFile,
     setPendingSignatureFile,
     removeSignature,
+
+    showBranding,
+    setShowBranding,
   }
 }

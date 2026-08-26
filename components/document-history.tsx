@@ -18,6 +18,7 @@ import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/
 import { useQuotations, useInvoices, useExpenseRecords, useExpenseReports, useTools, type SupabaseQuotationRow, type SupabaseInvoiceRow, type SupabaseExpenseRecordRow, type SupabaseExpenseReportRow, type Tool } from '@/hooks/use-supabase-storage'
 import { supabase } from '@/lib/supabase'
 import { useNotification } from '@/hooks/use_notification'
+import { useSettings } from '@/hooks/use-settings'
 import { exportQuotationsCSV, exportInvoicesCSV } from '@/lib/csv-export'
 import { shareQuotationWhatsApp, shareInvoiceWhatsApp, shareExpenseReportWhatsApp } from '@/lib/whatsapp'
 
@@ -449,6 +450,7 @@ export function DocumentHistory() {
   const { generatePdf, generatePdfBlob, isGenerating } = usePdfGenerator()
   const { generateExpensePdf, isGenerating: isGeneratingInforme, imageProgress } = useExpensePdfGenerator()
   const { success, error: notifError, warning } = useNotification()
+  const { showBranding } = useSettings()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null)
@@ -882,15 +884,17 @@ export function DocumentHistory() {
                 </div>
 
                 {/* Pie de página con marca */}
-                <div style={{
-                  marginTop: 22, paddingTop: 14, borderTop: '1px solid #e5e7eb',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                }}>
-                  <FileText size={11} strokeWidth={2} color="#9ca3af" />
-                  <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
-                    Generado con CotiFactura
-                  </span>
-                </div>
+                {showBranding && (
+                  <div style={{
+                    marginTop: 22, paddingTop: 14, borderTop: '1px solid #e5e7eb',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  }}>
+                    <FileText size={11} strokeWidth={2} color="#9ca3af" />
+                    <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
+                      Generado con CotiFactura
+                    </span>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1130,15 +1134,17 @@ export function DocumentHistory() {
                     </div>
 
                     {/* Pie de página con marca */}
-                    <div style={{
-                      marginTop: 24, paddingTop: 16, borderTop: '1px solid #e5e7eb',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    }}>
-                      <FileText size={11} strokeWidth={2} color="#9ca3af" />
-                      <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
-                        Generado con CotiFactura
-                      </span>
-                    </div>
+                    {showBranding && (
+                      <div style={{
+                        marginTop: 24, paddingTop: 16, borderTop: '1px solid #e5e7eb',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                      }}>
+                        <FileText size={11} strokeWidth={2} color="#9ca3af" />
+                        <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
+                          Generado con CotiFactura
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )

@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
       full_name: (u.user_metadata as { full_name?: string } | null)?.full_name ?? null,
       created_at: u.created_at,
       last_sign_in_at: u.last_sign_in_at,
+      banned_until: u.banned_until ?? null,
       subscription_status: subsByUser.get(u.id)?.status ?? null,
       current_period_end: subsByUser.get(u.id)?.current_period_end ?? null,
     }))

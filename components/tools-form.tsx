@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Header } from '@/components/header'
 import { useTools, type Tool } from '@/hooks/use-supabase-storage'
 import { useNotification } from '@/hooks/use_notification'
+import { useSettings } from '@/hooks/use-settings'
 import { formatCurrency } from '@/lib/document-utils'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 
@@ -41,6 +42,7 @@ const inputStyle = 'border border-border rounded-md px-3 py-2 text-sm bg-backgro
 
 export function ToolsForm() {
   const { success, error: notifError, loading, dismiss, info } = useNotification()
+  const { showBranding } = useSettings()
   const { generatePdf, isGenerating } = usePdfGenerator()
   const router = useRouter()
 
@@ -625,15 +627,17 @@ export function ToolsForm() {
           </div>
 
           {/* Pie de página con marca */}
-          <div style={{
-            marginTop: 22, paddingTop: 14, borderTop: '1px solid #e5e7eb',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          }}>
-            <FileText size={11} strokeWidth={2} color="#9ca3af" />
-            <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
-              Generado con CotiFactura
-            </span>
-          </div>
+          {showBranding && (
+            <div style={{
+              marginTop: 22, paddingTop: 14, borderTop: '1px solid #e5e7eb',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}>
+              <FileText size={11} strokeWidth={2} color="#9ca3af" />
+              <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>
+                Generado con CotiFactura
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </div>

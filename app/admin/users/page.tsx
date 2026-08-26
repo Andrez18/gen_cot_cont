@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Loader2, Trash2, Search, Users as UsersIcon } from 'lucide-react'
+import { Loader2, Trash2, Search, Users as UsersIcon, Power } from 'lucide-react'
 
 interface AdminUser {
   id: string
@@ -22,6 +22,7 @@ interface AdminUser {
   full_name: string | null
   created_at: string
   last_sign_in_at: string | null
+  banned_until: string | null
   subscription_status: string | null
   current_period_end: string | null
 }
@@ -32,6 +33,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true)
   const [forbidden, setForbidden] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [togglingId, setTogglingId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
   const authHeader = useCallback(async () => {
@@ -75,7 +77,29 @@ export default function AdminUsersPage() {
     }
   }
 
+  const isBanned = (u: AdminUser) =>
+    !!u.banned_until && new Date(u.banned_until) > new Date()
+
+  const toggleUser = async (id: string, active: boolean) => {
+    setTogglingId(id)
+    const headers = await authHeader()
+    if (!headers) { setTogglingId(null); return }
+
+    const res = await fetch('/api/admin/users/toggle', {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: id, active }),
+    })
+    setTogglingId(null)
+
+    if (res.ok) {
+      // Recargar la lista en silencio para reflejar el estado real del backend
+      load()
+    }
+  }
+
   const statusLabel = (u: AdminUser) => {
+    if (isBanned(u)) return { text: 'Bloqueada', tone: 'banned' as const }
     const expired = u.current_period_end ? new Date(u.current_period_end) < new Date() : true
     if (u.subscription_status === 'active' && !expired) return { text: 'Activa', tone: 'active' as const }
     if (u.subscription_status === 'canceled') return { text: 'Cancelada', tone: 'muted' as const }
@@ -150,11 +174,60 @@ export default function AdminUsersPage() {
               <div className="flex items-center gap-2.5 shrink-0">
                 <span
                   className={`rounded-full px-3 py-1 text-[11.5px] font-medium ${
-                    status.tone === 'active' ? 'bg-white text-black' : 'bg-white/8 text-white/50'
+                    status.tone === 'active'
+                      ? 'bg-white text-black'
+                      : status.tone === 'banned'
+                        ? 'bg-red-500/15 text-red-400'
+                        : 'bg-white/8 text-white/50'
                   }`}
                 >
                   {status.text}
                 </span>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      disabled={togglingId === u.id}
+                      title={isBanned(u) ? 'Activar usuario' : 'Desactivar usuario'}
+                      className={`flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/5 transition-colors disabled:opacity-50 ${
+                        isBanned(u)
+                          ? 'text-emerald-400/80 hover:bg-emerald-500/15 hover:text-emerald-400'
+                          : 'text-amber-400/80 hover:bg-amber-500/15 hover:text-amber-400'
+                      }`}
+                    >
+                      {togglingId === u.id
+                        ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        : <Power className="h-3.5 w-3.5" />}
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-zinc-950 border-white/10 text-white rounded-3xl">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-white">
+                        ¿{isBanned(u) ? 'Activar' : 'Desactivar'} a {u.full_name || u.email}?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription className="text-white/50">
+                        {isBanned(u)
+                          ? 'Podrá volver a iniciar sesión y usar la app con normalidad.'
+                          : 'No podrá volver a iniciar sesión hasta que lo reactives. Sus datos se conservan intactos.'}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="rounded-full border-white/15 bg-transparent text-white hover:bg-white/8 hover:text-white">
+                        Cancelar
+                      </AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => toggleUser(u.id, isBanned(u))}
+                        className={`rounded-full text-white ${
+                          isBanned(u)
+                            ? 'bg-emerald-500 hover:bg-emerald-600'
+                            : 'bg-amber-500 hover:bg-amber-600'
+                        }`}
+                      >
+                        Sí, {isBanned(u) ? 'activar' : 'desactivar'}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

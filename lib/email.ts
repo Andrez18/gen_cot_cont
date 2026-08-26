@@ -175,3 +175,24 @@ export function paymentRejectedEmail(siteUrl: string) {
     }),
   }
 }
+
+// Aviso al administrador cuando un usuario envía un pago para revisar.
+export function newPaymentAdminEmail(userEmail: string, amount: number, reference: string) {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cotifactura.vercel.app'
+  return {
+    subject: '💰 Nuevo pago por revisar - CotiFactura',
+    html: emailLayout({
+      heading: 'Nuevo pago por revisar',
+      bodyHtml: `
+        <p style="font-size: 14px; line-height: 1.6; color: #9ca3af; margin: 0;">
+          <strong style="color: #e4e2e5;">${userEmail}</strong> envió un pago de
+          <strong style="color: #e4e2e5;">$${amount.toLocaleString('es-CO')} COP</strong>
+          con la referencia <strong style="color: #e4e2e5;">${reference}</strong>.
+          Entra al panel para aprobarlo o rechazarlo.
+        </p>
+      `,
+      ctaLabel: 'Revisar pago',
+      ctaUrl: `${siteUrl}/admin/payments`,
+    }),
+  }
+}

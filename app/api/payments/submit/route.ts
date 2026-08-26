@@ -3,7 +3,9 @@ import { requireUser } from '@/lib/require-user'
 import { createAdminClient } from '@/lib/supabase-admin'
 import { applyDiscount } from '@/lib/discount'
 import { logger } from '@/lib/logger'
-import { notifyAdminNewPayment } from '@/lib/push'
+import { notifyAdminNewPayment, getAdminUserIds } from '@/lib/push'
+import { createNotification } from '@/lib/notifications'
+import { sendEmail, newPaymentAdminEmail } from '@/lib/email'
 
 const PRICE_COP = Number(process.env.SUBSCRIPTION_PRICE_COP ?? process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_COP ?? '30000')
 
@@ -155,6 +157,34 @@ export async function POST(req: NextRequest) {
 
   // Notificar al admin por push
   notifyAdminNewPayment(user.email ?? 'desconocido', finalAmount).catch(() => {})
+
+  // Aviso persistente en la campana del panel admin (no depende del push ni
+  // de que el admin haya concedido permisos del navegador).
+  try {
+    const adminIds = await getAdminUserIds()
+    await Promise.all(
+      adminIds.map((adminId) =>
+        createNotification({
+          userId: adminId,
+          type: 'info',
+          title: 'Nuevo pago por revisar',
+          message: `${user.email} envió un pago de $${finalAmount.toLocaleString('es-CO')} COP (ref. ${reference}).`,
+          link: '/admin/payments',
+        }),
+      ),
+    )
+  } catch {
+    // No bloquea la solicitud si falla el aviso in-app
+  }
+
+  // Correo al admin con el enlace directo al panel de pagos
+  const adminEmail = process.env.ADMIN_EMAIL ?? process.env.NEXT_PUBLIC_ADMIN_EMAIL
+  if (adminEmail) {
+    void sendEmail({
+      to: adminEmail,
+      ...newPaymentAdminEmail(user.email, finalAmount, reference),
+    }).catch(() => {})
+  }
 
   return NextResponse.json({ success: true, finalAmount, discountAmount })
 }

@@ -11,7 +11,7 @@ import { useNotification } from '@/hooks/use_notification'
 
 export function MfaGuard({ children }: { children: React.ReactNode }) {
   const { user, isLoaded } = useAuth()
-  const { mfaEnabled, mfaVerified, loading, verify, isAdmin } = useAdminMfa(user?.email)
+  const { mfaEnabled, mfaVerified, loading, verify, isAdmin } = useAdminMfa()
   const { success } = useNotification()
   const [token, setToken] = useState('')
   const [verifying, setVerifying] = useState(false)

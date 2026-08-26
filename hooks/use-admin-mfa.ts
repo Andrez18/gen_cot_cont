@@ -2,15 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useIsAdmin } from '@/hooks/use-is-admin'
 
-const ADMIN_EMAIL = process.env.NEXT_PUBLIC_ADMIN_EMAIL?.toLowerCase().trim()
-
-export function useAdminMfa(userEmail?: string | null) {
+export function useAdminMfa() {
+  const { isAdmin } = useIsAdmin()
   const [mfaEnabled, setMfaEnabled] = useState(false)
   const [mfaVerified, setMfaVerified] = useState(false)
   const [loading, setLoading] = useState(true)
-
-  const isAdmin = !!userEmail && !!ADMIN_EMAIL && userEmail.toLowerCase() === ADMIN_EMAIL
 
   useEffect(() => {
     if (!isAdmin) {
@@ -19,6 +17,7 @@ export function useAdminMfa(userEmail?: string | null) {
     }
 
     let cancelled = false
+    setLoading(true)
 
     async function check() {
       const { data: { session } } = await supabase.auth.getSession()

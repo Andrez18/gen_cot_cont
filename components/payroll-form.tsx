@@ -14,6 +14,7 @@ import {
   X,
   ChevronDown,
   History,
+  HelpCircle,
   Save,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -28,7 +29,8 @@ import {
   type PayrollRunLine,
 } from '@/hooks/use-payroll'
 import { useNotification } from '@/hooks/use_notification'
-import { usePdfGenerator } from '@/hooks/use-pdf-generator'
+import { useSettings } from '@/hooks/use-settings'
+import { usePayrollPdf } from '@/hooks/use-payroll-pdf'
 import { formatCurrency, formatShortDate } from '@/lib/document-utils'
 import {
   computeEmployeePayroll,
@@ -122,31 +124,14 @@ function defaultPeriod(): { start: string; end: string } {
 
 const COMPANY_KEY = 'cotifactura_payroll_company'
 
-interface PdfPayload {
-  number: string
-  /** Nombre visible de la liquidación; si falta se usa el código. */
-  name?: string
-  periodLabel: string
-  companyName: string
-  companyNit: string
-  lines: Array<{
-    fullName: string
-    documentNumber?: string | null
-    position?: string | null
-    paymentType: PayrollPaymentType
-    daysWorked?: number
-    hoursWorked?: number
-    result: PayrollLineResult
-  }>
-}
-
 /* ================================================================
    COMPONENTE PRINCIPAL
 ================================================================ */
 
 export function PayrollForm() {
   const { success, error: notifError } = useNotification()
-  const { generatePdfNoBreak, isGenerating } = usePdfGenerator()
+  const { showBranding } = useSettings()
+  const { generatePayrollPdf, isGenerating: isGeneratingPdf } = usePayrollPdf()
   const {
     employees,
     addEmployee,
@@ -181,7 +166,6 @@ export function PayrollForm() {
 
   /* ── guardado y PDF ─────────────────────────────────────────────────── */
   const [isSavingRun, setIsSavingRun] = useState(false)
-  const [pdfData, setPdfData] = useState<PdfPayload | null>(null)
 
   /* Tutorial solo la primera vez que entra a la función */
   useEffect(() => {
@@ -468,15 +452,17 @@ export function PayrollForm() {
     setRunName(`Nómina ${periodLabel}`)
   }
 
-  /* ── PDF ────────────────────────────────────────────────────────────── */
+  /* ── PDF (texto real: seleccionable y copiable) ────────────────────── */
 
-  const triggerPdf = (payload: PdfPayload) => {
-    setPdfData(payload)
-    setTimeout(() => {
-      generatePdfNoBreak('payroll-pdf-preview', `Nomina-${payload.number}`).catch(() =>
-        notifError('Error', 'No se pudo generar el PDF'),
-      )
-    }, 300)
+  const downloadPdf = async (
+    payload: Parameters<typeof generatePayrollPdf>[0],
+    fileName?: string,
+  ) => {
+    try {
+      await generatePayrollPdf(payload, { branding: showBranding, fileName })
+    } catch {
+      notifError('Error', 'No se pudo generar el PDF')
+    }
   }
 
   const handleDownloadCurrent = () => {
@@ -484,7 +470,7 @@ export function PayrollForm() {
       notifError('Nómina vacía', 'Agrega al menos un trabajador activo')
       return
     }
-    triggerPdf({
+    void downloadPdf({
       number: runNumber,
       name: runName.trim(),
       periodLabel,
@@ -493,10 +479,8 @@ export function PayrollForm() {
       lines: buildLines().map(l => ({
         fullName: l.fullName,
         documentNumber: l.documentNumber ?? null,
-        position: l.position ?? null,
         paymentType: l.paymentType,
         daysWorked: l.daysWorked,
-        hoursWorked: l.hoursWorked,
         result: l.result,
       })),
     })
@@ -505,22 +489,23 @@ export function PayrollForm() {
   const handleDownloadRun = (runId: string) => {
     const run = runs.find(r => r.id === runId)
     if (!run) return
-    triggerPdf({
-      number: run.number,
-      name: run.name ?? '',
-      periodLabel: run.period_label ?? formatPeriodLabel(run.period_start, run.period_end),
-      companyName: run.company_name ?? '',
-      companyNit: run.company_nit ?? '',
-      lines: (run.lines ?? []).map(l => ({
-        fullName: l.fullName,
-        documentNumber: l.documentNumber ?? null,
-        position: l.position ?? null,
-        paymentType: l.paymentType,
-        daysWorked: l.daysWorked,
-        hoursWorked: l.hoursWorked,
-        result: l.result,
-      })),
-    })
+    void downloadPdf(
+      {
+        number: run.number,
+        name: run.name ?? '',
+        periodLabel: run.period_label ?? formatPeriodLabel(run.period_start, run.period_end),
+        companyName: run.company_name ?? '',
+        companyNit: run.company_nit ?? '',
+        lines: (run.lines ?? []).map(l => ({
+          fullName: l.fullName,
+          documentNumber: l.documentNumber ?? null,
+          paymentType: l.paymentType,
+          daysWorked: l.daysWorked,
+          result: l.result,
+        })),
+      },
+      `Nomina-${run.number}`,
+    )
   }
 
   const handleDeleteRun = async (runId: string) => {
@@ -557,7 +542,7 @@ export function PayrollForm() {
             className="gap-1.5 shrink-0"
             onClick={() => setShowTutorial(true)}
           >
-            <History className="size-4" />
+            <HelpCircle className="size-4" />
             Ver tutorial
           </Button>
         </div>
@@ -635,7 +620,7 @@ export function PayrollForm() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Documento</Label>
+                <Label className="text-xs text-muted-foreground">Documento (opcional)</Label>
                 <input
                   className={inputStyle}
                   placeholder="CC 1.000.000.000"
@@ -824,7 +809,7 @@ export function PayrollForm() {
                             />
                           </div>
                           <div className="space-y-1">
-                            <Label className="text-xs text-muted-foreground">Documento</Label>
+                            <Label className="text-xs text-muted-foreground">Documento (opcional)</Label>
                             <input
                               className={inputStyle}
                               value={editDraft.document_number}
@@ -1298,11 +1283,11 @@ export function PayrollForm() {
                 <Button
                   variant="outline"
                   onClick={handleDownloadCurrent}
-                  disabled={isGenerating || totals.totalDevengados <= 0}
+                  disabled={isGeneratingPdf || totals.totalDevengados <= 0}
                   className="gap-2 flex-1"
                 >
                   <FileDown size={14} />
-                  {isGenerating ? 'Generando...' : 'Descargar PDF'}
+                  {isGeneratingPdf ? 'Generando...' : 'Descargar PDF'}
                 </Button>
               </div>
 
@@ -1381,9 +1366,6 @@ export function PayrollForm() {
           </section>
         )}
       </main>
-
-      {/* ── Vista oculta para capturar el PDF ───────────────────────────── */}
-      {pdfData && <PayrollPdfPreview id="payroll-pdf-preview" data={pdfData} />}
     </div>
   )
 }
@@ -1474,155 +1456,3 @@ function NoApplyRow({
   )
 }
 
-/* ── plantilla HTML que se convierte a PDF ───────────────────────────── */
-
-function PayrollPdfPreview({ id, data }: { id: string; data: PdfPayload }) {
-  const results = data.lines.map(l => l.result)
-  const totals = computeRunTotals(results)
-  const totalDays = data.lines.reduce((s, l) => s + (l.daysWorked ?? 0), 0)
-  const generatedAt = new Date().toLocaleDateString('es-CO', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-
-  return (
-    <div className="fixed -left-[9999px] top-0 pointer-events-none" aria-hidden>
-      <div
-        id={id}
-        style={{
-          width: 680,
-          background: '#fff',
-          padding: '40px 48px',
-          fontFamily: 'Arial, sans-serif',
-          color: '#111',
-        }}
-      >
-        {/* Encabezado */}
-        <div data-pdf-block style={{ borderBottom: '2px solid #111', paddingBottom: 16, marginBottom: 24 }}>
-          <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: '0.03em', color: '#888', marginBottom: 6 }}>
-            COTIFACTURA
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
-            <div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>
-                {data.name?.trim() || 'Liquidación de Nómina'}
-              </h1>
-              <p style={{ fontSize: 13, color: '#555', margin: '4px 0 0' }}>{data.periodLabel}</p>
-            </div>
-            <div style={{ textAlign: 'right' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#555', margin: 0 }}>{data.number}</p>
-              {data.companyName && (
-                <p style={{ fontSize: 11, color: '#555', margin: '2px 0 0' }}>
-                  {data.companyName}
-                  {data.companyNit ? ` · NIT/CC ${data.companyNit}` : ''}
-                </p>
-              )}
-              <p style={{ fontSize: 11, color: '#888', margin: '2px 0 0' }}>Generada: {generatedAt}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Resumen general */}
-        <table data-pdf-block style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 28 }}>
-          <thead>
-            <tr style={{ borderBottom: '1px solid #ddd' }}>
-              {['Trabajador', 'Forma de pago', 'Días trabajados', 'Valor por día', 'Neto a pagar'].map(h => (
-                <th
-                  key={h}
-                  align={h === 'Trabajador' || h === 'Forma de pago' ? 'left' : 'right'}
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: '#555',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em',
-                    padding: '6px 4px',
-                  }}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.lines.map((l, i) => {
-              const days = l.daysWorked ?? 0
-              // Nóminas antiguas pueden no traer el campo; se trata como 0
-              const fest = l.result.holidayDays ?? 0
-              return (
-                <tr
-                  key={i}
-                  style={{ borderBottom: '1px solid #f0f0f0', background: i % 2 === 0 ? '#fff' : '#fafafa' }}
-                >
-                  <td style={{ fontSize: 12, padding: '8px 4px' }}>
-                    {l.fullName}
-                    {l.documentNumber ? (
-                      <span style={{ color: '#999' }}> · {l.documentNumber}</span>
-                    ) : null}
-                  </td>
-                  <td style={{ fontSize: 12, padding: '8px 4px', color: '#555' }}>
-                    {PAYMENT_TYPE_LABELS[l.paymentType]}
-                  </td>
-                  <td align="right" style={{ fontSize: 12, padding: '8px 4px' }}>
-                    {days || '—'}
-                    {fest > 0 && (
-                      <span style={{ color: '#666' }}>
-                        {' '}+{fest} fest.
-                      </span>
-                    )}
-                  </td>
-                  <td align="right" style={{ fontSize: 12, padding: '8px 4px' }}>
-                    {days > 0 ? formatCurrency(Math.round(l.result.neto / days)) : '—'}
-                  </td>
-                  <td align="right" style={{ fontSize: 12, padding: '8px 4px', fontWeight: 700 }}>
-                    {formatCurrency(l.result.neto)}
-                  </td>
-                </tr>
-              )
-            })}
-            <tr style={{ borderTop: '2px solid #111' }}>
-              <td colSpan={2} style={{ fontSize: 11, fontWeight: 700, padding: '8px 4px' }}>
-                TOTALES ({data.lines.length} trabajador{data.lines.length !== 1 ? 'es' : ''})
-              </td>
-              <td align="right" style={{ fontSize: 12, fontWeight: 700, padding: '8px 4px' }}>
-                {(() => {
-                  const totalFest = data.lines.reduce((s, l) => s + (l.result.holidayDays ?? 0), 0)
-                  return (
-                    <>
-                      {totalDays || '—'}
-                      {totalFest > 0 && (
-                        <span style={{ color: '#666', fontWeight: 400 }}>
-                          {' '}+{totalFest} fest.
-                        </span>
-                      )}
-                    </>
-                  )
-                })()}
-              </td>
-              <td style={{ fontSize: 12, padding: '8px 4px' }} />
-              <td align="right" style={{ fontSize: 13, fontWeight: 700, padding: '8px 4px' }}>
-                {formatCurrency(totals.totalNeto)}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        {/* Pie */}
-        <div
-          data-pdf-block
-          style={{
-            marginTop: 26,
-            paddingTop: 14,
-            borderTop: '1px solid #e5e7eb',
-            textAlign: 'center',
-          }}
-        >
-          <p style={{ fontSize: 10.5, color: '#9ca3af', fontWeight: 500, margin: 0 }}>
-            Generado con CotiFactura · Documento informativo, no reemplaza asesoría contable o laboral.
-          </p>
-        </div>
-      </div>
-    </div>
-  )
-}

@@ -1,5 +1,6 @@
 import webPush from 'web-push'
 import { createClient } from '@supabase/supabase-js'
+import { getAdminEmails } from './admin-roles'
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY!
@@ -33,17 +34,26 @@ async function getSubscriptions(userId: string) {
   return data ?? []
 }
 
-async function getAdminUserIds(): Promise<string[]> {
+export async function getAdminUserIds(): Promise<string[]> {
   const db = adminClient()
-  const adminEmail = (process.env.ADMIN_EMAIL ?? process.env.NEXT_PUBLIC_ADMIN_EMAIL)
-    ?.toLowerCase().trim()
-  if (!adminEmail) return []
+  const adminEmails = await getAdminEmails()
+  if (adminEmails.size === 0) return []
 
-  const { data: authUsers } = await db.auth.admin.listUsers()
-  if (!authUsers?.users) return []
-
-  const adminUser = authUsers.users.find(u => u.email?.toLowerCase() === adminEmail)
-  return adminUser ? [adminUser.id] : []
+  // Recorrer todas las páginas buscando TODOS los admins (propietario y
+  // adicionales); listUsers devuelve pocas filas por página.
+  const PER_PAGE = 500
+  const MAX_PAGES = 20
+  const ids: string[] = []
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const { data: authUsers } = await db.auth.admin.listUsers({ page, perPage: PER_PAGE })
+    if (!authUsers?.users?.length) break
+    for (const u of authUsers.users) {
+      const email = u.email?.toLowerCase().trim()
+      if (email && adminEmails.has(email)) ids.push(u.id)
+    }
+    if (authUsers.users.length < PER_PAGE) break
+  }
+  return ids
 }
 
 export async function sendPushToUser(userId: string, payload: PushPayload) {

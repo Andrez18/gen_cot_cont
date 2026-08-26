@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Users,
+  UserCog,
   ShieldCheck,
   Tag,
   ArrowLeft,
@@ -21,6 +22,7 @@ const TABS = [
   { href: '/admin/users', label: 'Usuarios', icon: Users, exact: false },
   { href: '/admin/payments', label: 'Pagos', icon: ShieldCheck, exact: false },
   { href: '/admin/discount-codes', label: 'Códigos', icon: Tag, exact: false },
+  { href: '/admin/admins', label: 'Admins', icon: UserCog, exact: false },
 ]
 
 export function AdminHeader() {

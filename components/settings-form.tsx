@@ -11,7 +11,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Save, User, Building2, CreditCard, PenTool, X } from 'lucide-react'
+import { Save, User, Building2, CreditCard, PenTool, X, Tag } from 'lucide-react'
+import { Switch } from '@/components/ui/switch'
 import { useSettings } from '@/hooks/use-settings'
 import { useNotification } from '@/hooks/use_notification'
 import { useState } from 'react'
@@ -28,6 +29,8 @@ export function SettingsForm() {
     pendingSignatureFile,
     setPendingSignatureFile,
     removeSignature,
+    showBranding,
+    setShowBranding,
   } = useSettings()
 
   const { success, error: notifError, loading, dismiss } = useNotification()
@@ -289,6 +292,31 @@ export function SettingsForm() {
               placeholder="Nombre del contacto"
             />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Marca en documentos */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Tag className="h-5 w-5" />
+            Documentos
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <label className="flex items-start justify-between gap-4 cursor-pointer select-none">
+            <span>
+              <span className="block text-sm font-medium">Mostrar &quot;Generado con CotiFactura&quot;</span>
+              <span className="block text-xs text-muted-foreground mt-0.5">
+                Aparece al pie de tus PDF con enlace a la app. Desactívalo si prefieres documentos sin marca.
+              </span>
+            </span>
+            <Switch
+              checked={showBranding}
+              onCheckedChange={setShowBranding}
+              className="shrink-0 mt-0.5"
+            />
+          </label>
         </CardContent>
       </Card>
 
