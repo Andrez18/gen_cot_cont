@@ -26,6 +26,7 @@ import {
   Monitor,
   LayoutDashboard,
   Wallet,
+  CircleDollarSign,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -46,6 +47,7 @@ import { useNotification } from '@/hooks/use_notification'
 import { useTheme } from 'next-themes'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 import { useIsAdmin } from '@/hooks/use-is-admin'
+import { useSettings } from '@/hooks/use-settings'
 import { NotificationCenter } from '@/components/notification-center'
 
 interface HeaderProps {
@@ -78,6 +80,7 @@ export function Header({ onSettingsClick }: HeaderProps) {
   const { installed, isIOS, canInstall, hasNativePrompt, promptInstall } = usePwaInstall()
   const [showIOSInstructions, setShowIOSInstructions] = useState(false)
   const { isAdmin } = useIsAdmin()
+  const { canUseLoans } = useSettings()
 
   const handleSignOut = async () => {
     await signOut()
@@ -193,6 +196,24 @@ export function Header({ onSettingsClick }: HeaderProps) {
                     </Link>
                   </Button>
                 ))}
+
+                {canUseLoans && (
+                  <Button
+                    variant="ghost"
+                    className="group justify-between h-12 px-4 rounded-2xl hover:bg-accent transition-all duration-200"
+                    asChild
+                  >
+                    <Link href="/loans">
+                      <span className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted/50 group-hover:bg-foreground/10 transition-colors">
+                          <CircleDollarSign className="h-4 w-4" />
+                        </div>
+                        <span className="font-medium">Préstamos</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 opacity-0 -translate-x-2 group-hover:opacity-50 group-hover:translate-x-0 transition-all" />
+                    </Link>
+                  </Button>
+                )}
 
                 {canInstall && (
                   <>

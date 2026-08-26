@@ -65,3 +65,17 @@ export interface Invoice {
 }
 
 export type DocumentType = 'quotation' | 'invoice'
+
+export interface WorkerLoan {
+  id: string
+  user_id: string
+  worker_name: string
+  amount: number
+  loan_date: string
+  reason: string | null
+  status: 'pending' | 'paid'
+  paid_date: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}

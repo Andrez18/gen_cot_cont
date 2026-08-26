@@ -27,6 +27,9 @@ export function useSettings() {
   // Mostrar la marca "Generado con CotiFactura" en los PDF generados
   const [showBranding, setShowBranding] = useState(true)
 
+  // Acceso a la sección de préstamos a trabajadores (solo usuarios habilitados)
+  const [canUseLoans, setCanUseLoans] = useState(false)
+
   const refreshSignatureUrl = useCallback(async (path: string | null) => {
     if (!path) {
       setSignatureUrl(null)
@@ -68,6 +71,7 @@ export function useSettings() {
           await refreshSignatureUrl(data.signature_path)
         }
         setShowBranding(data.show_branding !== false)
+        setCanUseLoans(data.can_use_loans === true)
       }
       setIsLoaded(true)
     }
@@ -157,5 +161,8 @@ export function useSettings() {
 
     showBranding,
     setShowBranding,
+
+    canUseLoans,
+    setCanUseLoans,
   }
 }

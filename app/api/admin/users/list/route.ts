@@ -27,9 +27,18 @@ export async function GET(req: NextRequest) {
     .from('subscriptions')
     .select('user_id, status, current_period_end')
 
+  const { data: settingsData } = await supabaseAdmin
+    .from('user_settings')
+    .select('user_id, can_use_loans')
+
   type SubRow = { user_id: string; status: string; current_period_end: string | null }
   const subsByUser = new Map<string, SubRow>(
     ((subscriptions ?? []) as SubRow[]).map((s) => [s.user_id, s])
+  )
+
+  type SettingsRow = { user_id: string; can_use_loans: boolean | null }
+  const settingsByUser = new Map<string, SettingsRow>(
+    ((settingsData ?? []) as SettingsRow[]).map((s) => [s.user_id, s])
   )
 
   let users = usersData.users
@@ -42,6 +51,7 @@ export async function GET(req: NextRequest) {
       banned_until: u.banned_until ?? null,
       subscription_status: subsByUser.get(u.id)?.status ?? null,
       current_period_end: subsByUser.get(u.id)?.current_period_end ?? null,
+      can_use_loans: settingsByUser.get(u.id)?.can_use_loans === true,
     }))
 
   // Filtrar por búsqueda si se proporciona

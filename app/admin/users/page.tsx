@@ -14,7 +14,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { Loader2, Trash2, Search, Users as UsersIcon, Power } from 'lucide-react'
+import { Loader2, Trash2, Search, Users as UsersIcon, Power, CircleDollarSign } from 'lucide-react'
 
 interface AdminUser {
   id: string
@@ -25,6 +25,7 @@ interface AdminUser {
   banned_until: string | null
   subscription_status: string | null
   current_period_end: string | null
+  can_use_loans: boolean
 }
 
 export default function AdminUsersPage() {
@@ -34,6 +35,7 @@ export default function AdminUsersPage() {
   const [forbidden, setForbidden] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [togglingLoansId, setTogglingLoansId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
 
   const authHeader = useCallback(async () => {
@@ -95,6 +97,23 @@ export default function AdminUsersPage() {
     if (res.ok) {
       // Recargar la lista en silencio para reflejar el estado real del backend
       load()
+    }
+  }
+
+  const toggleLoans = async (id: string, enabled: boolean) => {
+    setTogglingLoansId(id)
+    const headers = await authHeader()
+    if (!headers) { setTogglingLoansId(null); return }
+
+    const res = await fetch('/api/admin/users/toggle-loans', {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: id, enabled }),
+    })
+    setTogglingLoansId(null)
+
+    if (res.ok) {
+      setUsers(prev => prev.map(u => u.id === id ? { ...u, can_use_loans: enabled } : u))
     }
   }
 
@@ -183,6 +202,21 @@ export default function AdminUsersPage() {
                 >
                   {status.text}
                 </span>
+
+                <button
+                  disabled={togglingLoansId === u.id}
+                  title={u.can_use_loans ? 'Deshabilitar préstamos' : 'Habilitar préstamos'}
+                  className={`flex h-8 w-8 items-center justify-center rounded-full border border-white/12 bg-white/5 transition-colors disabled:opacity-50 ${
+                    u.can_use_loans
+                      ? 'text-emerald-400/80 hover:bg-emerald-500/15 hover:text-emerald-400'
+                      : 'text-white/30 hover:bg-white/8 hover:text-white/50'
+                  }`}
+                  onClick={() => toggleLoans(u.id, !u.can_use_loans)}
+                >
+                  {togglingLoansId === u.id
+                    ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    : <CircleDollarSign className="h-3.5 w-3.5" />}
+                </button>
 
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
