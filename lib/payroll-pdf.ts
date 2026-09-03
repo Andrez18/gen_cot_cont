@@ -17,7 +17,7 @@
    ========================================================= */
 
 import { formatCurrency } from '@/lib/document-utils'
-import { PAYMENT_TYPE_LABELS, type PayrollPaymentType } from '@/lib/payroll'
+import { PAYMENT_TYPE_LABELS, PAYROLL_CONSTANTS, type PayrollPaymentType } from '@/lib/payroll'
 
 const APP_URL = process.env.NEXT_PUBLIC_SITE_URL?.trim() || 'https://cotifactura.vercel.app'
 
@@ -33,9 +33,13 @@ export interface PayrollPdfData {
     documentNumber?: string | null
     paymentType: PayrollPaymentType
     daysWorked?: number
+    holidayDayRate?: number
     result: {
       neto: number
       holidayDays?: number
+      holidayPay?: number
+      totalDevengados?: number
+      totalDeducciones?: number
     }
   }>
 }
@@ -80,10 +84,6 @@ export async function buildPayrollPdf(
   const branding = options.branding !== false
   const { jsPDF } = await import('jspdf')
   const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' })
-
-  const totalNeto = data.lines.reduce((s, l) => s + (l.result.neto || 0), 0)
-  const totalDays = data.lines.reduce((s, l) => s + (l.daysWorked ?? 0), 0)
-  const totalFest = data.lines.reduce((s, l) => s + (l.result.holidayDays ?? 0), 0)
 
   let y = 0
 
@@ -143,6 +143,75 @@ export async function buildPayrollPdf(
     bandY + 18.5,
     { align: 'right' },
   )
+
+  /* ── Expandir filas: festivos/dominicales como fila separada ─────── */
+  interface ExpandedRow {
+    fullName: string
+    documentNumber?: string | null
+    paymentType: PayrollPaymentType
+    days: number
+    ratePerDay: number
+    net: number
+    isHoliday: boolean
+  }
+
+  const expandLines = (): ExpandedRow[] => {
+    const expanded: ExpandedRow[] = []
+    for (const l of data.lines) {
+      const normalDays = l.daysWorked ?? 0
+      const holidayDays = l.result.holidayDays ?? 0
+      const holidayPay = l.result.holidayPay ?? 0
+      const holidayRate = l.holidayDayRate ?? PAYROLL_CONSTANTS.PAGO_FESTIVO_DEFAULT
+      const totalDev = l.result.totalDevengados ?? 0
+      const totalDed = l.result.totalDeducciones ?? 0
+      const neto = l.result.neto ?? 0
+
+      if (holidayDays > 0) {
+        const holidayNet = totalDev > 0
+          ? Math.round(holidayPay - (holidayPay / totalDev) * totalDed)
+          : holidayPay
+        const normalNet = neto - holidayNet
+
+        if (normalDays > 0) {
+          expanded.push({
+            fullName: l.fullName,
+            documentNumber: l.documentNumber,
+            paymentType: l.paymentType,
+            days: normalDays,
+            ratePerDay: normalDays > 0 ? Math.round(normalNet / normalDays) : 0,
+            net: normalNet,
+            isHoliday: false,
+          })
+        }
+        expanded.push({
+          fullName: l.fullName,
+          documentNumber: l.documentNumber,
+          paymentType: l.paymentType,
+          days: holidayDays,
+          ratePerDay: holidayRate,
+          net: holidayNet,
+          isHoliday: true,
+        })
+      } else {
+        expanded.push({
+          fullName: l.fullName,
+          documentNumber: l.documentNumber,
+          paymentType: l.paymentType,
+          days: normalDays,
+          ratePerDay: normalDays > 0 ? Math.round(neto / normalDays) : 0,
+          net: neto,
+          isHoliday: false,
+        })
+      }
+    }
+    return expanded
+  }
+
+  const expandedRows = expandLines()
+
+  const totalNeto = expandedRows.reduce((s, r) => s + r.net, 0)
+  const totalDays = expandedRows.filter(r => !r.isHoliday).reduce((s, r) => s + r.days, 0)
+  const totalFest = expandedRows.filter(r => r.isHoliday).reduce((s, r) => s + r.days, 0)
 
   /* ── Tarjetas resumen ──────────────────────────────────────────────── */
   const gap = 4
@@ -236,10 +305,8 @@ export async function buildPayrollPdf(
   drawTableHeader()
 
   /* ── Filas ────────────────────────────────────────────────────────── */
-  data.lines.forEach((l, i) => {
+  expandedRows.forEach((r, i) => {
     ensureSpace()
-    const days = l.daysWorked ?? 0
-    const fest = l.result.holidayDays ?? 0
 
     // Fondo cebra
     if (i % 2 === 1) {
@@ -249,11 +316,11 @@ export async function buildPayrollPdf(
 
     const baseline = y
 
-    // Trabajador (+ documento en gris, solo si existe: es opcional)
+    // Trabajador (+ documento en gris)
     pdf.setFont('helvetica', 'normal')
     pdf.setFontSize(8.5)
-    const docSuffix = l.documentNumber ? ` · ${l.documentNumber}` : ''
-    const nameText = fitText(pdf, l.fullName, 52 - pdf.getTextWidth(docSuffix))
+    const docSuffix = r.documentNumber ? ` · ${r.documentNumber}` : ''
+    const nameText = fitText(pdf, r.fullName, 52 - pdf.getTextWidth(docSuffix))
     pdf.setTextColor(...INK)
     pdf.text(nameText, COL_NAME_X + 1.5, baseline)
     if (docSuffix) {
@@ -266,26 +333,18 @@ export async function buildPayrollPdf(
     pdf.setFont('helvetica', 'normal')
     pdf.setFontSize(8)
     pdf.setTextColor(85, 85, 90)
-    pdf.text(fitText(pdf, PAYMENT_TYPE_LABELS[l.paymentType], 30), COL_TYPE_X, baseline)
+    const typeLabel = r.isHoliday ? 'Día festivo / dominical' : PAYMENT_TYPE_LABELS[r.paymentType]
+    pdf.text(fitText(pdf, typeLabel, 30), COL_TYPE_X, baseline)
 
-    // Días trabajados (+ festivos en gris)
+    // Días
     pdf.setFontSize(8.5)
     pdf.setTextColor(...INK)
-    const daysText = String(days || '—')
-    if (fest > 0 && days > 0) {
-      const festText = ` +${fest} fest.`
-      pdf.setTextColor(...GRAY_SOFT)
-      pdf.text(festText, COL_DAYS_RIGHT, baseline, { align: 'right' })
-      pdf.setTextColor(...INK)
-      pdf.text(daysText, COL_DAYS_RIGHT - pdf.getTextWidth(festText), baseline, { align: 'right' })
-    } else {
-      pdf.text(daysText, COL_DAYS_RIGHT, baseline, { align: 'right' })
-    }
+    pdf.text(String(r.days || '—'), COL_DAYS_RIGHT, baseline, { align: 'right' })
 
-    // Valor por día (neto ÷ días del periodo)
+    // Valor por día
     pdf.setTextColor(...INK)
     pdf.text(
-      days > 0 ? formatCurrency(Math.round(l.result.neto / days)) : '—',
+      r.days > 0 ? formatCurrency(r.ratePerDay) : '—',
       COL_PER_DAY_RIGHT,
       baseline,
       { align: 'right' },
@@ -293,7 +352,7 @@ export async function buildPayrollPdf(
 
     // Neto a pagar
     pdf.setFont('helvetica', 'bold')
-    pdf.text(formatCurrency(l.result.neto), COL_NETO_RIGHT, baseline, { align: 'right' })
+    pdf.text(formatCurrency(r.net), COL_NETO_RIGHT, baseline, { align: 'right' })
 
     pdf.setDrawColor(235, 235, 238)
     pdf.setLineWidth(0.2)

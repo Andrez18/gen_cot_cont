@@ -476,13 +476,25 @@ export function PayrollForm() {
       periodLabel,
       companyName: companyName.trim(),
       companyNit: companyNit.trim(),
-      lines: buildLines().map(l => ({
-        fullName: l.fullName,
-        documentNumber: l.documentNumber ?? null,
-        paymentType: l.paymentType,
-        daysWorked: l.daysWorked,
-        result: l.result,
-      })),
+      lines: buildLines().map(l => {
+        const f = lineFields[l.employeeId ?? ''] ?? emptyLineFields()
+        return {
+          fullName: l.fullName,
+          documentNumber: l.documentNumber ?? null,
+          paymentType: l.paymentType,
+          daysWorked: l.daysWorked,
+          holidayDayRate: f.holidayDayRate == null || f.holidayDayRate.trim() === ''
+            ? undefined
+            : Number(f.holidayDayRate),
+          result: {
+            neto: l.result.neto,
+            holidayDays: l.result.holidayDays,
+            holidayPay: l.result.holidayPay,
+            totalDevengados: l.result.totalDevengados,
+            totalDeducciones: l.result.totalDeducciones,
+          },
+        }
+      }),
     })
   }
 
@@ -501,7 +513,14 @@ export function PayrollForm() {
           documentNumber: l.documentNumber ?? null,
           paymentType: l.paymentType,
           daysWorked: l.daysWorked,
-          result: l.result,
+          holidayDayRate: l.holidayDayRate,
+          result: {
+            neto: l.result.neto,
+            holidayDays: l.result.holidayDays,
+            holidayPay: l.result.holidayPay,
+            totalDevengados: l.result.totalDevengados,
+            totalDeducciones: l.result.totalDeducciones,
+          },
         })),
       },
       `Nomina-${run.number}`,
