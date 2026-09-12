@@ -161,6 +161,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="description" content={SITE_DESCRIPTION} />
+        <meta name="google-site-verification" content="q0pUKW3ZDj0DBT4n6bJm8c9Qoe2C40C5jBUyedm9u9s" />
         <link rel="icon" href="/icon-192x192.png" type="image/png" />
         <link rel="icon" href="/icon-512x512.jpg" type="image/jpeg" />
         <link rel="apple-touch-icon" href="/apple-icon.jpg" />
