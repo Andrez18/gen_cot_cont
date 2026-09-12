@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cotifactura.app'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cotifactura.vercel.app'
 
 // Solo se listan las rutas públicas: la landing y las páginas legales.
 // El resto de la app (dashboard, formularios, historial, admin) requiere
