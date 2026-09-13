@@ -46,7 +46,7 @@ export function NotificationCenter() {
 
   useEffect(() => {
     fetchNotifications()
-    const interval = setInterval(fetchNotifications, 60_000)
+    const interval = setInterval(fetchNotifications, 300_000)
     return () => clearInterval(interval)
   }, [fetchNotifications])
 
