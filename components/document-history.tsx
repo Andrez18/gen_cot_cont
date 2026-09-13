@@ -70,37 +70,38 @@ function RegistroRow({ r, onVerFoto }: { r: SupabaseExpenseRecordRow; onVerFoto:
   return (
     <div style={{ padding: '10px 12px', borderBottom: '1px solid var(--muted)', fontSize: '13px' }}>
       {/* Fila principal */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
         <span style={{
-          width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0,
+          width: '7px', height: '7px', borderRadius: '50%', flexShrink: 0, marginTop: '5px',
           background: r.tipo === 'ingreso' ? 'var(--income-text)' : 'var(--destructive)', display: 'inline-block',
         }} />
-        <span style={{ flex: 1, color: 'var(--foreground)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {r.descripcion}
-        </span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ color: 'var(--foreground)', fontWeight: 500, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {r.descripcion}
+          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{r.cat || '—'}</span>
+            <span style={{ fontSize: '11px', color: 'var(--border)' }}>·</span>
+            <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{r.fecha}</span>
+            {r.foto_url && (
+              <>
+                <span style={{ fontSize: '11px', color: 'var(--border)' }}>·</span>
+                <button
+                  onClick={() => { if (r.foto_url) onVerFoto(r.foto_url) }}
+                  style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--muted-foreground)' }}
+                >
+                  <Image size={11} /> foto
+                </button>
+              </>
+            )}
+          </div>
+        </div>
         <span style={{
-          fontWeight: 600, flexShrink: 0,
+          fontWeight: 600, flexShrink: 0, whiteSpace: 'nowrap',
           color: r.tipo === 'ingreso' ? 'var(--income-text)' : 'var(--expense-text)',
         }}>
           {r.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(r.monto)}
         </span>
-      </div>
-      {/* Fila secundaria: meta */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', paddingLeft: '15px' }}>
-        <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{r.cat || '—'}</span>
-        <span style={{ fontSize: '11px', color: 'var(--border)' }}>·</span>
-        <span style={{ fontSize: '11px', color: 'var(--muted-foreground)' }}>{r.fecha}</span>
-        {r.foto_url && (
-          <>
-            <span style={{ fontSize: '11px', color: 'var(--border)' }}>·</span>
-            <button
-              onClick={() => { if (r.foto_url) onVerFoto(r.foto_url) }}
-              style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '4px', padding: '2px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '3px', fontSize: '11px', color: 'var(--muted-foreground)' }}
-            >
-              <Image size={11} /> foto
-            </button>
-          </>
-        )}
       </div>
     </div>
   )
@@ -538,26 +539,26 @@ export function DocumentHistory() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="quotations" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-          <TabsTrigger value="quotations" className="gap-1.5">
+        <TabsList className="flex w-full overflow-x-auto sm:grid sm:grid-cols-4 gap-0">
+          <TabsTrigger value="quotations" className="gap-1.5 flex-shrink-0 min-w-0 flex-1 sm:flex-none">
             <FileText className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">Cotizaciones ({quotations.length})</span>
             <span className="sm:hidden text-xs">Cotiz.</span>
           </TabsTrigger>
-          <TabsTrigger value="invoices" className="gap-1.5">
+          <TabsTrigger value="invoices" className="gap-1.5 flex-shrink-0 min-w-0 flex-1 sm:flex-none">
             <Receipt className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">Cuentas ({invoices.length})</span>
             <span className="sm:hidden text-xs">Cuentas</span>
           </TabsTrigger>
-          <TabsTrigger value="gastos" className="gap-1.5">
+          <TabsTrigger value="gastos" className="gap-1.5 flex-shrink-0 min-w-0 flex-1 sm:flex-none">
             <TrendingUp className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">Gastos</span>
             <span className="sm:hidden text-xs">Gastos</span>
           </TabsTrigger>
-          <TabsTrigger value="herramientas" className="gap-1.5">
+          <TabsTrigger value="herramientas" className="gap-1.5 flex-shrink-0 min-w-0 flex-1 sm:flex-none">
             <Wrench className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">Herramientas</span>
-            <span className="sm:hidden text-xs">Tools</span>
+            <span className="sm:hidden text-xs">Herram.</span>
           </TabsTrigger>
         </TabsList>
 

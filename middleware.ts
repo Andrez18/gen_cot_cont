@@ -83,11 +83,11 @@ function securityHeaders(response: NextResponse): NextResponse {
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com",
       "style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
       "img-src 'self' blob: data: https:",
-      "font-src 'self' https://fonts.gstatic.com",
-      "connect-src 'self' https://*.supabase.co",
+      "font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com",
+      "connect-src 'self' https://*.supabase.co https://cdnjs.cloudflare.com",
       "frame-ancestors 'none'",
     ].join('; '),
   )

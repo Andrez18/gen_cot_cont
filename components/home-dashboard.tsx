@@ -277,21 +277,22 @@ export function HomeDashboard() {
       </div>
 
       {/* Gráficas y resumen */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-4">
         {/* Gráfica mensual */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 min-w-0 overflow-hidden">
           <CardHeader>
             <CardTitle className="text-base">Ingresos vs Gastos (6 meses)</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2 sm:px-6">
             {!isLoaded ? (
-              <Skeleton className="h-[200px] w-full" />
+              <Skeleton className="h-50 w-full" />
             ) : hasChartData ? (
               <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={monthlyData} barGap={4} margin={{ left: -10, right: 10 }}>
-                  <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(0)}M` : v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v} />
+                <BarChart data={monthlyData} barGap={2} margin={{ left: -20, right: 5, top: 5, bottom: 5 }}>
+                  <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} width={40} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(0)}M` : v >= 1000 ? `${(v / 1000).toFixed(0)}K` : v} />
                   <Tooltip
+                    allowEscapeViewBox={{ x: false, y: true }}
                     formatter={(value: number) => formatCurrency(value)}
                     contentStyle={{
                       borderRadius: '8px',
@@ -303,12 +304,12 @@ export function HomeDashboard() {
                     labelStyle={{ color: isDark ? '#a1a1aa' : '#6b7280' }}
                     itemStyle={{ color: isDark ? '#e4e4e7' : '#1f2937' }}
                   />
-                  <Bar dataKey="ingresos" name="Ingresos" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                  <Bar dataKey="ingresos" name="Ingresos" radius={[4, 4, 0, 0]} maxBarSize={28}>
                     {monthlyData.map((_, i) => (
                       <Cell key={i} fill="#22c55e" fillOpacity={0.7} />
                     ))}
                   </Bar>
-                  <Bar dataKey="gastos" name="Gastos" radius={[4, 4, 0, 0]} maxBarSize={32}>
+                  <Bar dataKey="gastos" name="Gastos" radius={[4, 4, 0, 0]} maxBarSize={28}>
                     {monthlyData.map((_, i) => (
                       <Cell key={i} fill="#ef4444" fillOpacity={0.7} />
                     ))}
@@ -324,27 +325,27 @@ export function HomeDashboard() {
         </Card>
 
         {/* Top clientes */}
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <CardHeader>
             <CardTitle className="text-base">Top Clientes</CardTitle>
           </CardHeader>
           <CardContent>
             {!isLoaded ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
               </div>
             ) : topClients.length > 0 ? (
               <div className="space-y-3">
                 {topClients.map((client, i) => (
-                  <div key={client.name} className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground">
+                  <div key={client.name} className="flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-muted-foreground">
                       {i + 1}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{client.name}</p>
-                      <p className="text-xs text-muted-foreground">{client.count} doc{client.count !== 1 ? 's' : ''}</p>
+                      <p className="text-[11px] text-muted-foreground">{client.count} doc{client.count !== 1 ? 's' : ''}</p>
                     </div>
-                    <span className="text-sm font-bold shrink-0">{formatCurrency(client.total)}</span>
+                    <span className="text-xs sm:text-sm font-bold shrink-0 whitespace-nowrap">{formatCurrency(client.total)}</span>
                   </div>
                 ))}
               </div>
@@ -366,7 +367,7 @@ export function HomeDashboard() {
                 <DollarSign className="h-5 w-5 text-muted-foreground" />
                 <span className="text-sm font-medium">Balance total</span>
               </div>
-              <span className={`text-lg font-bold ${stats.totalIngresos - stats.totalGastos >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              <span className={`text-lg font-bold whitespace-nowrap ${stats.totalIngresos - stats.totalGastos >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {formatCurrency(stats.totalIngresos - stats.totalGastos)}
               </span>
             </div>

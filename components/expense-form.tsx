@@ -462,61 +462,59 @@ export function ExpenseForm() {
                   {registros.map(r => (
                     <div
                       key={r.id}
-                      className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/30 transition-colors"
+                      className="flex items-start gap-2.5 rounded-lg border p-3 hover:bg-muted/30 transition-colors"
                     >
                       {/* Indicador tipo */}
-                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full mt-0.5 ${
                         r.tipo === 'ingreso' ? 'bg-green-500/10' : 'bg-red-500/10'
                       }`}>
                         {r.tipo === 'ingreso'
-                          ? <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-                          : <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          ? <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                          : <TrendingDown className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                         }
                       </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{r.descripcion}</p>
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-sm font-medium leading-tight">{r.descripcion}</p>
+                        <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 mt-1">
                           {r.cat && (
-                            <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                               {r.cat}
                             </span>
                           )}
-                          <span className="text-[11px] text-muted-foreground">{r.fecha}</span>
+                          <span className="text-[10px] text-muted-foreground">{r.fecha}</span>
                         </div>
                       </div>
 
-                      {/* Foto */}
-                      {r.foto_url && (
-                        fotoUrls[r.id] ? (
-                          <button
-                            onClick={() => setFotoModal(fotoUrls[r.id])}
-                            className="shrink-0 rounded-md border overflow-hidden hover:opacity-80 transition-opacity"
-                          >
-                            <img src={fotoUrls[r.id]} alt="recibo" className="h-9 w-9 object-cover" />
-                          </button>
-                        ) : (
-                          <div className="shrink-0 h-9 w-9 rounded-md border flex items-center justify-center">
-                            <ImageIcon className="h-4 w-4 text-muted-foreground animate-pulse" />
-                          </div>
-                        )
-                      )}
-
-                      {/* Monto */}
-                      <span className={`text-sm font-bold shrink-0 ${
-                        r.tipo === 'ingreso' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                      }`}>
-                        {r.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(r.monto)}
-                      </span>
-
-                      {/* Eliminar */}
-                      <button
-                        onClick={() => setRegistroAEliminar({ id: r.id, descripcion: r.descripcion })}
-                        className="shrink-0 text-muted-foreground hover:text-destructive transition-colors p-2 min-h-[44px] min-w-[44px] flex items-center justify-center"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {/* Monto + acciones */}
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {r.foto_url && (
+                          fotoUrls[r.id] ? (
+                            <button
+                              onClick={() => setFotoModal(fotoUrls[r.id])}
+                              className="shrink-0 rounded-md border overflow-hidden hover:opacity-80 transition-opacity"
+                            >
+                              <img src={fotoUrls[r.id]} alt="recibo" className="h-8 w-8 object-cover" />
+                            </button>
+                          ) : (
+                            <div className="shrink-0 h-8 w-8 rounded-md border flex items-center justify-center">
+                              <ImageIcon className="h-3.5 w-3.5 text-muted-foreground animate-pulse" />
+                            </div>
+                          )
+                        )}
+                        <span className={`text-xs font-bold whitespace-nowrap ${
+                          r.tipo === 'ingreso' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                        }`}>
+                          {r.tipo === 'ingreso' ? '+' : '-'}{formatCurrency(r.monto)}
+                        </span>
+                        <button
+                          onClick={() => setRegistroAEliminar({ id: r.id, descripcion: r.descripcion })}
+                          className="shrink-0 text-muted-foreground hover:text-destructive transition-colors p-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

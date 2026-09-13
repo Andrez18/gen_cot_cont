@@ -381,7 +381,7 @@ export function LandingPage() {
             }}
           />
 
-          <div className="relative max-w-3xl mx-auto px-6 pt-16 pb-12 md:pt-20 md:pb-16 text-center">
+          <div className="relative max-w-3xl mx-auto px-4 sm:px-6 pt-16 pb-12 md:pt-20 md:pb-16 text-center">
             <div
               className={`inline-flex items-center gap-2.5 rounded-full border border-white/12 bg-white/4 pl-1.5 pr-5 py-1.5 text-[13px] text-white/65 mb-6 transition-all duration-700 ease-out ${
                 mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
@@ -394,7 +394,7 @@ export function LandingPage() {
             </div>
 
             <h1
-              className={`text-[2.75rem] md:text-6xl lg:text-[4.25rem] font-light tracking-[-0.03em] leading-[1.05] mb-5 text-white transition-all duration-700 ease-out delay-100 ${
+              className={`text-[1.75rem] sm:text-[2.75rem] md:text-6xl lg:text-[4.25rem] font-light tracking-[-0.03em] leading-[1.05] mb-5 text-white transition-all duration-700 ease-out delay-100 ${
                 mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-3'
               }`}
             >
@@ -474,11 +474,11 @@ export function LandingPage() {
         </section>
 
         {/* Lo que nos define */}
-        <section className="border-white/8 py-8 px-6 bg-white/8 mx-8 rounded-4xl">
+        <section className="border-white/8 py-8 px-4 sm:px-6 bg-white/8 mx-4 sm:mx-8 rounded-4xl">
             <h2 className="text-4xl my-4 pb-8 font-medium text-center">Acerca de nosotros...</h2>
-          <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-8 md:gap-7">
+          <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-4 sm:gap-8 md:gap-7">
             {DEFINING_TRAITS.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="group bg-black py-6 px-6 rounded-3xl">
+              <div key={title} className="group bg-black py-6 px-4 sm:px-6 rounded-3xl">
                 <div className='flex gap-2 text-center'>
                 <Icon className="h-7 w-7 text-white/80" strokeWidth={1.75} />
                 <h3 className="text-2xl font-normal mb-2.5 tracking-[-0.01em]">{title}</h3>
@@ -490,7 +490,7 @@ export function LandingPage() {
         </section>
 
         {/* Caracteristicas detalladas */}
-        <section id="caracteristicas" className="border-t border-white/8 py-16 md:py-20 px-6">
+        <section id="caracteristicas" className="border-t border-white/8 py-16 md:py-20 px-4 sm:px-6">
           <div className="max-w-5xl mx-auto text-center">
             <p className="text-[11.5px] font-light text-white/35 uppercase tracking-[0.14em] mb-3.5">
               Características
@@ -563,7 +563,7 @@ export function LandingPage() {
         </section>
 
         {/* Multiplataforma */}
-        <section id="por-que" className="border-t border-white/8 py-16 md:py-20 px-6">
+        <section id="por-que" className="border-t border-white/8 py-16 md:py-20 px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center">
             <p className="text-[11.5px] font-light text-white/35 uppercase tracking-[0.14em] mb-2">
               Multiplataforma
@@ -585,7 +585,7 @@ export function LandingPage() {
         </section>
 
         {/* Precio */}
-        <section id="precio" className="relative overflow-hidden py-8 md:py-20 px-6">
+        <section id="precio" className="relative overflow-hidden py-8 md:py-20 px-4 sm:px-6">
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -641,12 +641,12 @@ export function LandingPage() {
         </section>
 
         {/* FAQ */}
-        <section id="preguntas" className="py-8 md:py-20 px-6">
+        <section id="preguntas" className="py-8 md:py-20 px-4 sm:px-6">
           <div className="max-w-2xl mx-auto">
-            <p className="text-[11.5px] font-light text-white/35 tracking-[0.14em] mb-1 justify-center text-center">
+            <p className="text-[11.5px] font-light text-white/35 tracking-[0.14em] mb-1 text-center">
               Preguntas frecuentes
             </p>
-            <h2 className="text-[28px] md:text-4xl font-medium tracking-[-0.02em] mb-9 justify-center text-center">
+            <h2 className="text-[28px] md:text-4xl font-medium tracking-[-0.02em] mb-9 text-center">
               Resolvemos tus dudas 
             </h2>
             <div className="flex flex-col divide-y divide-white/8 border-t border-b border-white/8">
@@ -655,7 +655,7 @@ export function LandingPage() {
                   <summary className="flex items-center justify-between gap-4 cursor-pointer list-none text-[15px] font-medium tracking-[-0.005em] [&::-webkit-details-marker]:hidden">
                     {q}
                     <span className="shrink-0 flex h-6 w-6 items-center justify-center rounded-full font-light text-white/50 transition-transform duration-300 group-open:rotate-180 text-base leading-none">
-                      v
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                     </span>
                   </summary>
                   <p className="text-[14px] text-white/45 leading-[1.65] mt-3.5 pr-8">{a}</p>
@@ -667,7 +667,7 @@ export function LandingPage() {
       </main>
 
 {/* Footer */}
-      <footer className="border-t border-white/8 py-14 px-6">
+      <footer className="border-t border-white/8 py-14 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-10 md:gap-6">
           {/* Marca + descripción */}
           <div>
