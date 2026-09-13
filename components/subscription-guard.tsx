@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/hooks/use-auth'
 import { useSubscription } from '@/hooks/use-subscription'
 import { usePushRegistration } from '@/hooks/use-push-registration'
@@ -24,6 +24,14 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
   const { isAdmin } = useIsAdmin()
   const pathname = usePathname()
   const pushRegistered = useRef(false)
+  const [showRenewal, setShowRenewal] = useState(false)
+
+  // Escuchar evento de renovación desde subscription-settings
+  useEffect(() => {
+    const handler = () => setShowRenewal(true)
+    window.addEventListener('open-renewal', handler)
+    return () => window.removeEventListener('open-renewal', handler)
+  }, [])
 
   // Registrar push notifications una sola vez cuando el usuario tiene sesión activa.
   // El admin también debe recibir pushes (avisos de nuevos pagos), aunque no
@@ -55,6 +63,22 @@ export function SubscriptionGuard({ children }: { children: React.ReactNode }) {
         Verificando suscripción...
       </div>
     )
+  }
+
+  // Mostrar paywall en modo renovación si el usuario lo solicitó
+  if (showRenewal && status === 'active') {
+    return (
+      <SubscriptionPaywall
+        status="renewal"
+        onSubmitted={() => { setShowRenewal(false); refresh() }}
+        onClose={() => setShowRenewal(false)}
+      />
+    )
+  }
+
+  // Permitir acceso durante trial o suscripción activa
+  if (status === 'active' || status === 'trial') {
+    return <>{children}</>
   }
 
   if (status === 'inactive' || status === 'pending') {

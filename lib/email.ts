@@ -196,3 +196,48 @@ export function newPaymentAdminEmail(userEmail: string, amount: number, referenc
     }),
   }
 }
+
+// Recordatorio de suscripción por vencer (para el usuario)
+export function subscriptionExpiringEmail(daysLeft: number, siteUrl: string) {
+  const dayText = daysLeft === 1 ? 'mañana' : `en ${daysLeft} días`
+  return {
+    subject: `⏰ Tu suscripción vence ${dayText} - CotiFactura`,
+    html: emailLayout({
+      heading: `Tu suscripción vence ${dayText}`,
+      bodyHtml: `
+        <p style="font-size: 14px; line-height: 1.6; color: #9ca3af; margin: 0;">
+          Tu acceso a <strong style="color: #e4e2e5;">CotiFactura</strong> vence ${dayText}.
+          Para no perder el acceso a tus cotizaciones, cuentas de cobro y control de gastos,
+          renueva tu suscripción ahora.
+        </p>
+      `,
+      ctaLabel: 'Renovar suscripción',
+      ctaUrl: siteUrl,
+    }),
+  }
+}
+
+// Email de bienvenida al usuario
+export function welcomeEmail(userName: string, siteUrl: string) {
+  return {
+    subject: '👋 Bienvenido a CotiFactura',
+    html: emailLayout({
+      heading: '¡Bienvenido a CotiFactura!',
+      bodyHtml: `
+        <p style="font-size: 14px; line-height: 1.6; color: #9ca3af; margin: 0;">
+          Hola <strong style="color: #e4e2e5;">${userName || 'contratista'}</strong>,
+          tu cuenta fue creada exitosamente. Ya puedes empezar a generar cotizaciones
+          y cuentas de cobro profesionales en minutos.
+        </p>
+        <p style="font-size: 14px; line-height: 1.6; color: #9ca3af; margin: 16px 0 0;">
+          <strong style="color: #e4e2e5;">Primeros pasos:</strong><br/>
+          1. Ve a Configuración y completa tus datos<br/>
+          2. Agrega tu firma digital<br/>
+          3. Crea tu primera cotización
+        </p>
+      `,
+      ctaLabel: 'Empezar ahora',
+      ctaUrl: siteUrl,
+    }),
+  }
+}

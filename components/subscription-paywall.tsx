@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/use-auth'
 import { usePaymentProofUpload } from '@/hooks/use-supabase-storage'
-import { Loader2, Lock, Clock, Copy, Check, Camera, X, Tag } from 'lucide-react'
+import { Loader2, Lock, Clock, Copy, Check, Camera, X, Tag, RefreshCw, Zap } from 'lucide-react'
 
 const NEQUI_NUMBER = process.env.NEXT_PUBLIC_NEQUI_NUMBER ?? '300 000 0000'
 const NEQUI_HOLDER = process.env.NEXT_PUBLIC_NEQUI_HOLDER ?? 'Tu Nombre'
@@ -13,9 +13,11 @@ const PRICE_COP = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_COP ?? '30000'
 export function SubscriptionPaywall({
   status,
   onSubmitted,
+  onClose,
 }: {
-  status: 'inactive' | 'pending'
+  status: 'inactive' | 'pending' | 'renewal'
   onSubmitted: () => Promise<void> | void
+  onClose?: () => void
 }) {
   const { user, signOut } = useAuth()
   const { uploadProof, isUploading } = usePaymentProofUpload()
@@ -31,6 +33,7 @@ export function SubscriptionPaywall({
   const [applyingDiscount, setApplyingDiscount] = useState(false)
   const [discountError, setDiscountError] = useState<string | null>(null)
   const [discount, setDiscount] = useState<{ code: string; finalAmount: number; discountAmount: number } | null>(null)
+  const [startingTrial, setStartingTrial] = useState(false)
 
   const copyNumber = async () => {
     await navigator.clipboard.writeText(NEQUI_NUMBER.replace(/\s/g, ''))
@@ -76,6 +79,31 @@ export function SubscriptionPaywall({
     setDiscount(null)
     setDiscountInput('')
     setDiscountError(null)
+  }
+
+  const handleStartTrial = async () => {
+    const confirmed = window.confirm(
+      'Activa tu prueba gratis de 7 días.\n\n' +
+      '• Tendrás acceso completo a todas las funciones\n' +
+      '• No se requiere tarjeta de crédito\n' +
+      '• Se cancela automáticamente al vencer\n\n' +
+      '¿Deseas continuar?'
+    )
+    if (!confirmed) return
+
+    setStartingTrial(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) { setStartingTrial(false); return }
+
+    const res = await fetch('/api/subscription/trial', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    })
+    setStartingTrial(false)
+
+    if (res.ok) {
+      await onSubmitted()
+    }
   }
 
   const handleSubmit = async () => {
@@ -136,7 +164,7 @@ export function SubscriptionPaywall({
             background: 'radial-gradient(ellipse 55% 40% at 50% 15%, rgba(255,255,255,0.06), transparent 70%)',
           }}
         />
-        <div className="relative max-w-md w-full rounded-3xl border border-white/8 bg-white/3 p-8">
+        <div className="relative max-w-md w-full rounded-3xl border border-white/8 bg-white/3 p-6 sm:p-8">
           <div className="flex items-center gap-2 text-white/40 mb-3">
             <Clock className="h-4 w-4" />
             <span className="text-[12.5px] uppercase tracking-[0.1em]">Pago en revisión</span>
@@ -148,7 +176,7 @@ export function SubscriptionPaywall({
           </p>
           <button
             onClick={() => signOut()}
-            className="text-[12.5px] text-white/35 hover:text-white/60 underline underline-offset-4 w-full text-center transition-colors"
+            className="text-[12.5px] text-white/35 hover:text-white/60 underline underline-offset-4 w-full text-center transition-colors py-2"
           >
             Cerrar sesión
           </button>
@@ -173,11 +201,35 @@ export function SubscriptionPaywall({
       />
 
       <div className="relative max-w-md w-full rounded-3xl border border-white/8 bg-white/3 p-8">
-        <div className="flex items-center gap-2 text-white/40 mb-3">
-          <Lock className="h-4 w-4" />
-          <span className="text-[12.5px] uppercase tracking-[0.1em]">Acceso restringido</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 text-white/40">
+            {status === 'renewal' ? (
+              <>
+                <RefreshCw className="h-4 w-4" />
+                <span className="text-[12.5px] uppercase tracking-[0.1em]">Renovar suscripción</span>
+              </>
+            ) : (
+              <>
+                <Lock className="h-4 w-4" />
+                <span className="text-[12.5px] uppercase tracking-[0.1em]">Acceso restringido</span>
+              </>
+            )}
+          </div>
+          {status === 'renewal' && onClose && (
+            <button
+              onClick={onClose}
+              className="text-white/35 hover:text-white/60 transition-colors"
+              aria-label="Cerrar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
-        <h2 className="text-2xl font-light tracking-[-0.02em] mb-6">Activa tu suscripción mensual</h2>
+        <h2 className="text-2xl font-light tracking-[-0.02em] mb-6">
+          {status === 'renewal'
+            ? 'Renueva tu suscripción mensual'
+            : 'Activa tu suscripción mensual'}
+        </h2>
 
         <div className="space-y-5">
           {/* Datos Nequi */}
@@ -187,7 +239,7 @@ export function SubscriptionPaywall({
               <span className="text-lg font-semibold tracking-[-0.01em]">{NEQUI_NUMBER}</span>
               <button
                 onClick={copyNumber}
-                className="flex items-center justify-center h-8 w-8 rounded-full border border-white/[0.14] bg-white/4 hover:bg-white/[0.09] hover:border-white/20 transition-all duration-200"
+                className="flex items-center justify-center h-10 w-10 rounded-full border border-white/[0.14] bg-white/4 hover:bg-white/[0.09] hover:border-white/20 transition-all duration-200"
                 aria-label="Copiar número"
               >
                 {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
@@ -219,7 +271,7 @@ export function SubscriptionPaywall({
                 </button>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   id="discount"
                   value={discountInput}
@@ -299,9 +351,31 @@ export function SubscriptionPaywall({
             {busy ? 'Enviando...' : 'Ya pagué, confirmar'}
           </button>
 
+          <div className="relative my-2">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10" />
+            </div>
+            <div className="relative flex justify-center text-[12px]">
+              <span className="bg-black px-3 text-white/30">o</span>
+            </div>
+          </div>
+
+          <button
+            onClick={handleStartTrial}
+            disabled={startingTrial}
+            className="w-full inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-[13px] font-medium text-white/70 hover:bg-white/10 hover:text-white/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {startingTrial ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Zap className="h-4 w-4" />
+            )}
+            {startingTrial ? 'Iniciando...' : 'Probar gratis 7 días'}
+          </button>
+
           <button
             onClick={() => signOut()}
-            className="text-[12.5px] text-white/35 hover:text-white/60 underline underline-offset-4 w-full text-center transition-colors"
+            className="text-[12.5px] text-white/35 hover:text-white/60 underline underline-offset-4 w-full text-center transition-colors py-2"
           >
             Cerrar sesión
           </button>

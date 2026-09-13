@@ -156,7 +156,33 @@ export function useQuotations() {
     return { data, error }
   }, [])
 
-  return { quotations, saveQuotation, isLoaded, hasMore, isLoadingMore, loadMore }
+  const updateQuotation = useCallback(async (id: string, q: Partial<Quotation>) => {
+    const { data, error } = await supabase
+      .from('quotations')
+      .update({
+        number: q.number,
+        date: q.date,
+        city: q.city,
+        client: q.client,
+        provider: q.provider,
+        items: q.items,
+        total: q.total,
+        bank_info: q.bankInfo,
+        notes: q.notes,
+        legal_text: q.legalText,
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (!error && data) {
+      setQuotations(prev => prev.map(q => (q.id === id ? data : q)))
+    }
+
+    return { data, error }
+  }, [])
+
+  return { quotations, saveQuotation, updateQuotation, isLoaded, hasMore, isLoadingMore, loadMore }
 }
 
 /* =========================
@@ -223,7 +249,32 @@ export function useInvoices() {
     return { data, error }
   }, [])
 
-  return { invoices, saveInvoice, isLoaded, hasMore, isLoadingMore, loadMore }
+  const updateInvoice = useCallback(async (id: string, inv: Partial<Invoice>) => {
+    const { data, error } = await supabase
+      .from('invoices')
+      .update({
+        number: inv.number,
+        date: inv.date,
+        city: inv.city,
+        client: inv.client,
+        provider: inv.provider,
+        concept: inv.concept,
+        amount: inv.amount,
+        amount_in_words: inv.amountInWords,
+        bank_info: inv.bankInfo,
+      })
+      .eq('id', id)
+      .select()
+      .single()
+
+    if (!error && data) {
+      setInvoices(prev => prev.map(i => (i.id === id ? data : i)))
+    }
+
+    return { data, error }
+  }, [])
+
+  return { invoices, saveInvoice, updateInvoice, isLoaded, hasMore, isLoadingMore, loadMore }
 }
 
 /* =========================

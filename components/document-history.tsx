@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { FileText, Receipt, Trash2, Eye, Download, Search, TrendingUp, Clock, ChevronDown, ChevronUp, Image, Wrench, Building2, FileSpreadsheet, MessageSquare } from 'lucide-react'
+import { FileText, Receipt, Trash2, Eye, Download, Search, TrendingUp, Clock, ChevronDown, ChevronUp, Image, Wrench, Building2, FileSpreadsheet, MessageSquare, Pencil, Copy } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -155,7 +155,7 @@ function InformeCard({
             <Button
               size="sm"
               variant="outline"
-              className="gap-1 h-7 text-xs px-2"
+              className="gap-1 h-9 text-xs px-3"
               onClick={e => { e.stopPropagation(); onVerPdf(informe, registros ?? [], index, enProgreso) }}
             >
               <Eye size={12} />
@@ -164,7 +164,7 @@ function InformeCard({
             <Button
               size="sm"
               variant="ghost"
-              className="gap-1 h-7 text-xs px-2"
+              className="gap-1 h-9 text-xs px-3"
               onClick={e => { e.stopPropagation(); onWhatsApp() }}
               title="Compartir por WhatsApp"
             >
@@ -393,7 +393,7 @@ function HerramientasTab({
                     <Button
                       size="sm"
                       variant="outline"
-                      className="gap-1 h-7 text-xs px-2"
+                      className="gap-1 h-9 text-xs px-3"
                       onClick={e => { e.stopPropagation(); onVerPdf(obraTools, obraTotal, sinObra ? undefined : obraKey) }}
                     >
                       <Eye size={12} />
@@ -538,7 +538,7 @@ export function DocumentHistory() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="quotations" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
           <TabsTrigger value="quotations" className="gap-1.5">
             <FileText className="h-4 w-4 shrink-0" />
             <span className="hidden sm:inline">Cotizaciones ({quotations.length})</span>
@@ -596,10 +596,26 @@ export function DocumentHistory() {
                         <p className="text-base font-bold text-primary mt-1">{formatCurrency(quotation.total)}</p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedQuotation(mapQuotation(quotation))}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setSelectedQuotation(mapQuotation(quotation))}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteQuotation(quotation.id)}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10" asChild>
+                          <a href={`/quotation/edit?id=${quotation.id}`}>
+                            <Pencil className="h-4 w-4" />
+                          </a>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => {
+                          const q = mapQuotation(quotation)
+                          const params = new URLSearchParams({
+                            client: q.client.companyName || '',
+                            nit: q.client.nit || '',
+                            location: q.client.location || '',
+                          })
+                          window.location.href = `/quotation/new?${params.toString()}`
+                        }}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => deleteQuotation(quotation.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -612,7 +628,7 @@ export function DocumentHistory() {
           {!searchTerm && hasMoreQuotations && (
             <div className="flex justify-center pt-2">
               <Button variant="outline" size="sm" onClick={loadMoreQuotations} disabled={isLoadingMoreQuotations}>
-                {isLoadingMoreQuotations ? 'Cargando...' : 'Cargar más'}
+                {isLoadingMoreQuotations ? 'Cargando...' : `Cargar más cotizaciones (${quotations.length} cargadas)`}
               </Button>
             </div>
           )}
@@ -653,10 +669,25 @@ export function DocumentHistory() {
                         <p className="text-base font-bold text-primary mt-1">{formatCurrency(invoice.amount)}</p>
                       </div>
                       <div className="flex items-center gap-1 shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedInvoice(mapInvoice(invoice))}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => setSelectedInvoice(mapInvoice(invoice))}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => deleteInvoice(invoice.id)}>
+                        <Button variant="ghost" size="icon" className="h-10 w-10" asChild>
+                          <a href={`/invoice/edit?id=${invoice.id}`}>
+                            <Pencil className="h-4 w-4" />
+                          </a>
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => {
+                          const i = mapInvoice(invoice)
+                          const params = new URLSearchParams({
+                            client: i.client.companyName || '',
+                            nit: i.client.nit || '',
+                          })
+                          window.location.href = `/invoice/new?${params.toString()}`
+                        }}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => deleteInvoice(invoice.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -669,7 +700,7 @@ export function DocumentHistory() {
           {!searchTerm && hasMoreInvoices && (
             <div className="flex justify-center pt-2">
               <Button variant="outline" size="sm" onClick={loadMoreInvoices} disabled={isLoadingMoreInvoices}>
-                {isLoadingMoreInvoices ? 'Cargando...' : 'Cargar más'}
+                {isLoadingMoreInvoices ? 'Cargando...' : `Cargar más cuentas (${invoices.length} cargadas)`}
               </Button>
             </div>
           )}

@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
-import { CreditCard, Loader2 } from 'lucide-react'
+import { CreditCard, Loader2, RefreshCw, AlertTriangle, Zap } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/hooks/use-auth'
 import { useNotification } from '@/hooks/use_notification'
@@ -23,6 +23,7 @@ import { useNotification } from '@/hooks/use_notification'
 type Row = {
   status: 'active' | 'inactive' | 'canceled' | string
   current_period_end: string | null
+  trial_ends_at: string | null
 }
 
 export function SubscriptionSettings() {
@@ -36,7 +37,7 @@ export function SubscriptionSettings() {
     if (!user) return
     const { data } = await supabase
       .from('subscriptions')
-      .select('status, current_period_end')
+      .select('status, current_period_end, trial_ends_at')
       .eq('user_id', user.id)
       .maybeSingle()
     setRow(data)
@@ -52,6 +53,15 @@ export function SubscriptionSettings() {
     ? new Date(row.current_period_end) < new Date()
     : true
   const isActive = row?.status === 'active' && !isExpired
+
+  const isTrial = row?.trial_ends_at
+    ? new Date(row.trial_ends_at) > new Date() && isActive
+    : false
+
+  const daysLeft = row?.current_period_end
+    ? Math.ceil((new Date(row.current_period_end).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))
+    : 0
+  const isExpiringSoon = isActive && daysLeft <= 7 && daysLeft > 0
 
   const handleCancel = async () => {
     setCanceling(true)
@@ -90,9 +100,17 @@ export function SubscriptionSettings() {
       <CardContent className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="text-muted-foreground">Estado</span>
-          <Badge variant={isActive ? 'default' : 'secondary'}>
-            {isActive ? 'Activa' : row.status === 'canceled' ? 'Cancelada' : 'Inactiva'}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {isTrial && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-medium text-blue-600 dark:text-blue-400">
+                <Zap className="h-3 w-3" />
+                Trial
+              </span>
+            )}
+            <Badge variant={isActive ? 'default' : 'secondary'}>
+              {isActive ? 'Activa' : row.status === 'canceled' ? 'Cancelada' : 'Inactiva'}
+            </Badge>
+          </div>
         </div>
 
         {row.current_period_end && (
@@ -104,8 +122,32 @@ export function SubscriptionSettings() {
           </div>
         )}
 
+        {isExpiringSoon && (
+          <div className="flex items-center gap-2 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-sm text-amber-600 dark:text-amber-400">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>
+              {daysLeft === 1
+                ? 'Tu suscripción vence mañana'
+                : `Tu suscripción vence en ${daysLeft} días`}
+            </span>
+          </div>
+        )}
+
         {isActive && (
-          <AlertDialog>
+          <>
+            <Button
+              variant="default"
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('open-renewal'))
+              }}
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Renovar suscripción
+            </Button>
+
+            <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="outline" size="sm" className="w-full mt-2 text-destructive hover:text-destructive">
                 Cancelar suscripción
@@ -127,7 +169,8 @@ export function SubscriptionSettings() {
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>
+            </AlertDialog>
+          </>
         )}
       </CardContent>
     </Card>

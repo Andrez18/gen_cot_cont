@@ -4,12 +4,13 @@ import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from './use-auth'
 
-export type SubscriptionStatus = 'loading' | 'active' | 'pending' | 'inactive'
+export type SubscriptionStatus = 'loading' | 'active' | 'pending' | 'inactive' | 'trial'
 
 export function useSubscription() {
   const { user, isLoaded: authLoaded } = useAuth()
   const [status, setStatus] = useState<SubscriptionStatus>('loading')
   const [currentPeriodEnd, setCurrentPeriodEnd] = useState<string | null>(null)
+  const [isTrial, setIsTrial] = useState(false)
 
   const refresh = useCallback(async () => {
     if (!user) {
@@ -19,7 +20,7 @@ export function useSubscription() {
 
     const { data } = await supabase
       .from('subscriptions')
-      .select('status, current_period_end')
+      .select('status, current_period_end, trial_ends_at')
       .eq('user_id', user.id)
       .maybeSingle()
 
@@ -29,14 +30,18 @@ export function useSubscription() {
 
     setCurrentPeriodEnd(data?.current_period_end ?? null)
 
+    // Verificar si está en trial
+    const inTrial = data?.trial_ends_at
+      ? new Date(data.trial_ends_at) > new Date() && data.status === 'active'
+      : false
+    setIsTrial(inTrial)
+
     if (data && !isExpired && data.status === 'active') {
-      setStatus('active')
-      // Verificar si la suscripción está por vencer (notificación push)
+      setStatus(inTrial ? 'trial' : 'active')
       checkSubscriptionExpiry()
       return
     }
 
-    // No hay suscripción activa: revisamos si tiene un pago pendiente de revisión.
     const { data: pendingRequest } = await supabase
       .from('payment_requests')
       .select('id')
@@ -67,5 +72,5 @@ export function useSubscription() {
     }
   }, [])
 
-  return { status, currentPeriodEnd, refresh }
+  return { status, currentPeriodEnd, isTrial, refresh }
 }

@@ -33,23 +33,29 @@ import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useQuotations } from '@/hooks/use-supabase-storage'  
 import { useNotification } from '@/hooks/use_notification'
 import { useSettings } from '@/hooks/use-settings'
+import { useAutosave } from '@/hooks/use-autosave'
+import { ClientCombobox } from './client-combobox'
 
 const UNITS = ['ml', 'm²', 'm³', 'und', 'global', 'viaje', 'día', 'hora', 'kg', 'lt']
 
-export function QuotationForm() {
-  const { saveQuotation } = useQuotations()
+export function QuotationForm({ editData }: { editData?: Quotation }) {
+  const { saveQuotation, updateQuotation } = useQuotations()
   const { providerInfo, bankInfo, clientInfo, isLoaded, signaturePath, hasSignature } = useSettings()
-  const { success, error: notifError, loading, dismiss } = useNotification()  
+  const { success, error: notifError, loading, dismiss } = useNotification()
 
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
   const { value: savedBank, setValue: setSavedBank } = useLocalStorage<BankInfo>('bank', DEFAULT_BANK_INFO)
 
   const { generatePdf, isGenerating } = usePdfGenerator()
+  const { load: loadDraft, clear: clearDraft } = useAutosave<QuotationFormData | null>('cotifactory-quotation-draft', null, !editData)
 
   const [showPreview, setShowPreview] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [documentNumber, setDocumentNumber] = useState('')
   const [date, setDate] = useState('')
+
+  // Cargar borrador guardado si existe (solo para formularios nuevos)
+  const savedDraft = !editData ? loadDraft() : null
 
   const {
     register,
@@ -60,7 +66,17 @@ export function QuotationForm() {
     control,
   } = useForm<QuotationFormData>({
     resolver: zodResolver(quotationSchema),
-    defaultValues: {
+    defaultValues: savedDraft ?? (editData ? {
+      documentNumber: editData.number,
+      date: editData.date,
+      city: editData.city,
+      client: editData.client,
+      provider: editData.provider,
+      items: editData.items,
+      bankInfo: editData.bankInfo,
+      notes: editData.notes ?? '',
+      includeLegalText: !!editData.legalText,
+    } : {
       documentNumber: '',
       date: '',
       city: 'Medellín, Antioquia',
@@ -70,31 +86,40 @@ export function QuotationForm() {
       bankInfo: DEFAULT_BANK_INFO,
       notes: '',
       includeLegalText: true,
-    },
+    }),
   })
 
   const { fields, append, remove } = useFieldArray({ control, name: 'items' })
   const watchedItems = watch('items')
 
-  useEffect(() => {
-    const num = generateDocumentNumber()
-    const today = new Date().toISOString().split('T')[0]
-    setDocumentNumber(num)
-    setDate(today)
-    setFormValue('documentNumber', num)
-    setFormValue('date', today)
-  }, [setFormValue])
+  // Autoguardado: trackear cambios del formulario
+  const watchedAll = watch()
+  useAutosave('cotifactory-quotation-draft', watchedAll, !editData && !showPreview)
 
   useEffect(() => {
-    if (isLoaded) {
+    if (!editData) {
+      const num = generateDocumentNumber()
+      const today = new Date().toISOString().split('T')[0]
+      setDocumentNumber(num)
+      setDate(today)
+      setFormValue('documentNumber', num)
+      setFormValue('date', today)
+    } else {
+      setDocumentNumber(editData.number)
+      setDate(editData.date)
+    }
+  }, [setFormValue, editData])
+
+  useEffect(() => {
+    if (!editData && isLoaded) {
       setFormValue('provider', { ...providerInfo, signaturePath: signaturePath ?? undefined })
       setFormValue('bankInfo', bankInfo)
       setFormValue('client', clientInfo)
     }
-  }, [isLoaded, signaturePath, providerInfo, bankInfo, clientInfo, setFormValue])
+  }, [isLoaded, signaturePath, providerInfo, bankInfo, clientInfo, setFormValue, editData])
 
-  useEffect(() => { setFormValue('provider', savedProvider) }, [savedProvider, setFormValue])
-  useEffect(() => { setFormValue('bankInfo', savedBank) }, [savedBank, setFormValue])
+  useEffect(() => { if (!editData) { setFormValue('provider', savedProvider) } }, [savedProvider, setFormValue, editData])
+  useEffect(() => { if (!editData) { setFormValue('bankInfo', savedBank) } }, [savedBank, setFormValue, editData])
 
   const updateItemTotal = (index: number, field: 'quantity' | 'unitPrice', value: number) => {
     const items = watch('items')
@@ -109,7 +134,7 @@ export function QuotationForm() {
   const total = (watchedItems ?? []).reduce((sum, item) => sum + (item?.total ?? 0), 0)
 
   const buildQuotation = (data: QuotationFormData): Quotation => ({
-    id: generateId(),
+    id: editData?.id ?? generateId(),
     number: data.documentNumber,
     date: data.date,
     city: data.city,
@@ -120,14 +145,16 @@ export function QuotationForm() {
     bankInfo: data.bankInfo,
     notes: data.notes,
     legalText: data.includeLegalText ? DEFAULT_LEGAL_TEXT : '',
-    createdAt: new Date().toISOString(),
+    createdAt: editData?.createdAt ?? new Date().toISOString(),
   })
 
   const onSubmit = async (data: QuotationFormData) => {
     setIsSaving(true)
     const quotation = buildQuotation(data)
-    const loadingId = loading('Guardando cotización...')
-    const { error } = await saveQuotation(quotation)
+    const loadingId = loading(editData ? 'Actualizando cotización...' : 'Guardando cotización...')
+    const { error } = editData
+      ? await updateQuotation(editData.id, quotation)
+      : await saveQuotation(quotation)
     dismiss(loadingId)
     setIsSaving(false)
 
@@ -135,9 +162,12 @@ export function QuotationForm() {
       notifError('Error al guardar', error.message)
       return
     }
-    setSavedProvider(data.provider)
-    setSavedBank(data.bankInfo)
-    success('Cotización guardada', 'El documento fue guardado exitosamente')
+    if (!editData) {
+      setSavedProvider(data.provider)
+      setSavedBank(data.bankInfo)
+      clearDraft()
+    }
+    success(editData ? 'Cotización actualizada' : 'Cotización guardada', 'El documento fue guardado exitosamente')
   }
 
   const handleDownloadPdf = async () => {
@@ -220,7 +250,15 @@ export function QuotationForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="companyName">Razón Social</Label>
-            <Input id="companyName" {...register('client.companyName')} placeholder="ANTIOQUEÑA COMBUSTIBLES S.A.S" />
+            <ClientCombobox
+              value={watch('client.companyName') ?? ''}
+              onSelect={(client) => {
+                setFormValue('client.companyName', client.companyName)
+                if (client.nit) setFormValue('client.nit', client.nit)
+                if (client.location) setFormValue('client.location', client.location)
+              }}
+              placeholder="Buscar cliente existente..."
+            />
             {errors.client?.companyName && <p className="text-xs text-destructive">{errors.client.companyName.message}</p>}
           </div>
           <div className="space-y-2">

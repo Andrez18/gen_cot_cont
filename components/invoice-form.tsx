@@ -33,9 +33,11 @@ import { InvoicePreview } from './invoice-preview'
 import { usePdfGenerator } from '@/hooks/use-pdf-generator'
 import { useLocalStorage } from '@/hooks/use-local-storage'
 import { useInvoices } from '@/hooks/use-supabase-storage'  
+import { useAutosave } from '@/hooks/use-autosave'
+import { ClientCombobox } from './client-combobox'
 
-export function InvoiceForm() {
-  const { saveInvoice } = useInvoices()  
+export function InvoiceForm({ editData }: { editData?: Invoice }) {
+  const { saveInvoice, updateInvoice } = useInvoices()  
   const { providerInfo, bankInfo, clientInfo, isLoaded, signaturePath, hasSignature } = useSettings()
 
   const { value: savedProvider, setValue: setSavedProvider } = useLocalStorage<ProviderInfo>('provider', DEFAULT_PROVIDER_INFO)
@@ -43,9 +45,13 @@ export function InvoiceForm() {
 
   const { generatePdf, isGenerating } = usePdfGenerator()
   const { success, error: notifError, loading, dismiss } = useNotification()
+  const { load: loadDraft, clear: clearDraft } = useAutosave<InvoiceFormData | null>('cotifactory-invoice-draft', null, !editData)
 
   const [showPreview, setShowPreview] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+
+  // Cargar borrador guardado si existe (solo para formularios nuevos)
+  const savedDraft = !editData ? loadDraft() : null
 
   const {
     register,
@@ -55,7 +61,16 @@ export function InvoiceForm() {
     watch,
   } = useForm<InvoiceFormData>({
     resolver: zodResolver(invoiceSchema),
-    defaultValues: {
+    defaultValues: savedDraft ?? (editData ? {
+      documentNumber: editData.number,
+      date: editData.date,
+      city: editData.city,
+      client: editData.client,
+      provider: editData.provider,
+      concept: editData.concept,
+      amount: editData.amount,
+      bankInfo: editData.bankInfo,
+    } : {
       documentNumber: '',
       date: '',
       city: 'Medellín',
@@ -64,29 +79,35 @@ export function InvoiceForm() {
       concept: '',
       amount: 0,
       bankInfo: DEFAULT_BANK_INFO,
-    },
+    }),
   })
 
   const watchedAmount = watch('amount')
 
-  useEffect(() => {
-    setFormValue('documentNumber', generateDocumentNumber())
-    setFormValue('date', new Date().toISOString().split('T')[0])
-  }, [setFormValue])
+  // Autoguardado: trackear cambios del formulario
+  const watchedAll = watch()
+  useAutosave('cotifactory-invoice-draft', watchedAll, !editData && !showPreview)
 
   useEffect(() => {
-    if (isLoaded) {
+    if (!editData) {
+      setFormValue('documentNumber', generateDocumentNumber())
+      setFormValue('date', new Date().toISOString().split('T')[0])
+    }
+  }, [setFormValue, editData])
+
+  useEffect(() => {
+    if (!editData && isLoaded) {
       setFormValue('provider', { ...providerInfo, signaturePath: signaturePath ?? undefined })
       setFormValue('bankInfo', bankInfo)
       setFormValue('client', clientInfo)
     }
-  }, [isLoaded, signaturePath, providerInfo, bankInfo, clientInfo, setFormValue])
+  }, [isLoaded, signaturePath, providerInfo, bankInfo, clientInfo, setFormValue, editData])
 
-  useEffect(() => { setFormValue('provider', savedProvider) }, [savedProvider, setFormValue])
-  useEffect(() => { setFormValue('bankInfo', savedBank) }, [savedBank, setFormValue])
+  useEffect(() => { if (!editData) { setFormValue('provider', savedProvider) } }, [savedProvider, setFormValue, editData])
+  useEffect(() => { if (!editData) { setFormValue('bankInfo', savedBank) } }, [savedBank, setFormValue, editData])
 
   const buildInvoice = (data: InvoiceFormData): Invoice => ({
-    id: generateId(),
+    id: editData?.id ?? generateId(),
     number: data.documentNumber,
     date: data.date,
     city: data.city,
@@ -96,14 +117,16 @@ export function InvoiceForm() {
     amount: data.amount,
     amountInWords: numberToWords(data.amount),
     bankInfo: data.bankInfo,
-    createdAt: new Date().toISOString(),
+    createdAt: editData?.createdAt ?? new Date().toISOString(),
   })
 
   const onSubmit = async (data: InvoiceFormData) => {
     setIsSaving(true)
     const invoice = buildInvoice(data)
-    const loadingId = loading('Guardando cuenta de cobro...')
-    const { error } = await saveInvoice(invoice)
+    const loadingId = loading(editData ? 'Actualizando cuenta de cobro...' : 'Guardando cuenta de cobro...')
+    const { error } = editData
+      ? await updateInvoice(editData.id, invoice)
+      : await saveInvoice(invoice)
     dismiss(loadingId)
     setIsSaving(false)
 
@@ -111,9 +134,12 @@ export function InvoiceForm() {
       notifError('Error al guardar', error.message)
       return
     }
-    setSavedProvider(data.provider)
-    setSavedBank(data.bankInfo)
-    success('Cuenta de cobro guardada', 'El documento fue guardado exitosamente')
+    if (!editData) {
+      setSavedProvider(data.provider)
+      setSavedBank(data.bankInfo)
+      clearDraft()
+    }
+    success(editData ? 'Cuenta de cobro actualizada' : 'Cuenta de cobro guardada', 'El documento fue guardado exitosamente')
   }
 
   const handleDownloadPdf = async () => {
@@ -196,7 +222,14 @@ export function InvoiceForm() {
         <CardContent className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="companyName">Razón Social</Label>
-            <Input id="companyName" {...register('client.companyName')} placeholder="EDS ANTIOQUEÑA DE COMBUSTIBLES" />
+            <ClientCombobox
+              value={watch('client.companyName') ?? ''}
+              onSelect={(client) => {
+                setFormValue('client.companyName', client.companyName)
+                if (client.nit) setFormValue('client.nit', client.nit)
+              }}
+              placeholder="Buscar cliente existente..."
+            />
             {errors.client?.companyName && <p className="text-xs text-destructive">{errors.client.companyName.message}</p>}
           </div>
           <div className="space-y-2">
