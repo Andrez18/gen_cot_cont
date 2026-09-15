@@ -16,10 +16,14 @@ import {
   History,
   HelpCircle,
   Save,
+  Wand2,
+  List,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Header } from '@/components/header'
+import { PayrollWizard } from '@/components/payroll-wizard'
+import type { WorkerEntry } from '@/components/payroll-wizard-steps'
 import { PayrollTutorialModal, PAYROLL_TUTORIAL_KEY } from '@/components/payroll-tutorial-modal'
 import {
   usePayrollEmployees,
@@ -167,6 +171,17 @@ export function PayrollForm() {
 
   /* ── guardado y PDF ─────────────────────────────────────────────────── */
   const [isSavingRun, setIsSavingRun] = useState(false)
+
+  /* ── wizard ────────────────────────────────────────────────────────── */
+  const [wizardMode, setWizardMode] = useState(false)
+  const [wizardWantsPdf, setWizardWantsPdf] = useState(false)
+  const [pendingWizardData, setPendingWizardData] = useState<{
+    periodStart: string
+    periodEnd: string
+    companyName: string
+    companyNit: string
+    workers: WorkerEntry[]
+  } | null>(null)
 
   /* Tutorial solo la primera vez que entra a la función */
   useEffect(() => {
@@ -568,6 +583,106 @@ export function PayrollForm() {
     else success('Liquidación eliminada', '')
   }
 
+  /* ── wizard: inyectar datos al formulario ──────────────────────────── */
+
+  const handleWizardComplete = (data: {
+    periodStart: string
+    periodEnd: string
+    companyName: string
+    companyNit: string
+    workers: WorkerEntry[]
+  }, wantsPdf = false) => {
+    setWizardWantsPdf(wantsPdf)
+    setPendingWizardData(data)
+    setWizardMode(false)
+  }
+
+  // Cuando hay pendingWizardData y los empleados ya están cargados, inyectar
+  useEffect(() => {
+    if (!pendingWizardData || !employeesLoaded) return
+    const data = pendingWizardData
+
+    // Inyectar periodo y empresa
+    setPeriodStart(data.periodStart)
+    setPeriodEnd(data.periodEnd)
+    setCompanyName(data.companyName)
+    setCompanyNit(data.companyNit)
+
+    // Crear trabajadores nuevos y recopilar IDs para liquidaciones
+    const injectLiquidations = async () => {
+      const workerIds: Array<{ id: string; liq: WorkerEntry['liquidation'] }> = []
+
+      for (const w of data.workers) {
+        if (w.existingId) {
+          workerIds.push({ id: w.existingId, liq: w.liquidation })
+        } else if (w.newEmployee) {
+          const draft = {
+            full_name: w.newEmployee.fullName.trim(),
+            document_number: w.newEmployee.documentNumber.trim() || null,
+            position: w.newEmployee.position.trim() || null,
+            payment_type: w.newEmployee.paymentType,
+            monthly_salary:
+              w.newEmployee.paymentType === 'monthly' || w.newEmployee.paymentType === 'biweekly'
+                ? num(w.newEmployee.monthlySalary) || null
+                : null,
+            weekly_rate: w.newEmployee.paymentType === 'weekly' ? num(w.newEmployee.weeklyRate) || null : null,
+            daily_rate: w.newEmployee.paymentType === 'daily' ? num(w.newEmployee.dailyRate) || null : null,
+            hourly_rate: w.newEmployee.paymentType === 'hourly' ? num(w.newEmployee.hourlyRate) || null : null,
+            task_rate: w.newEmployee.paymentType === 'per_task' ? num(w.newEmployee.taskRate) || null : null,
+            transport_aux: w.newEmployee.transportAux,
+            deduct_health: w.newEmployee.deductHealth,
+            deduct_pension: w.newEmployee.deductPension,
+            active: true,
+          }
+          const { data: newEmp } = await addEmployee(draft)
+          if (newEmp) {
+            workerIds.push({ id: newEmp.id, liq: w.liquidation })
+          }
+        }
+      }
+
+      // Inyectar liquidaciones (el día extra se suma a los días trabajados)
+      setLineFields(prev => {
+        const next = { ...prev }
+        for (const { id, liq } of workerIds) {
+          const baseDays = num(liq.daysWorked)
+          const totalDays = liq.extraDay ? baseDays + 1 : baseDays
+          next[id] = {
+            daysWorked: String(totalDays),
+            hoursWorked: '',
+            holidayDaysWorked: liq.holidayDaysWorked,
+            holidayDayRate: liq.holidayDayRate,
+            extraDayHours: liq.extraDayHours,
+            extraNightHours: liq.extraNightHours,
+            nightOvertimeHours: liq.nightOvertimeHours,
+            bonuses: liq.bonuses,
+            otherDeductions: liq.otherDeductions,
+          }
+        }
+        return next
+      })
+
+      // Seleccionar solo los trabajadores del wizard
+      setSelectedEmployees(
+        Object.fromEntries(workerIds.map(w => [w.id, true]))
+      )
+
+      setPendingWizardData(null)
+
+      // Si el wizard pidió PDF, generarlo después de inyectar los datos
+      if (wizardWantsPdf) {
+        setWizardWantsPdf(false)
+        // Esperar a que React aplique los cambios de estado
+        setTimeout(() => {
+          handleDownloadCurrent()
+        }, 300)
+      }
+    }
+
+    injectLiquidations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingWizardData, employeesLoaded])
+
   /* ================================================================
      RENDER
   ================================================================ */
@@ -578,6 +693,41 @@ export function PayrollForm() {
 
       <PayrollTutorialModal open={showTutorial} onOpenChange={setShowTutorial} />
 
+      {/* ── Botón flotante: alternar wizard/formulario ────────────────── */}
+      <button
+        type="button"
+        onClick={() => setWizardMode(!wizardMode)}
+        className="fixed bottom-6 right-6 z-50 size-12 rounded-full bg-foreground text-background shadow-lg flex items-center justify-center hover:opacity-90 transition-opacity"
+        title={wizardMode ? 'Ver formulario clásico' : 'Asistente paso a paso'}
+      >
+        {wizardMode ? <List size={20} /> : <Wand2 size={20} />}
+      </button>
+
+      {wizardMode ? (
+        /* ── Modo Wizard ─────────────────────────────────────────────── */
+        <main className="flex-1 max-w-[820px] mx-auto w-full px-4 py-10 space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="size-10 rounded-lg border border-border bg-secondary flex items-center justify-center shrink-0">
+              <Wallet size={18} className="text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl font-semibold tracking-tight">Nómina</h1>
+              <p className="text-sm text-muted-foreground">
+                Asistente paso a paso para generar tu nómina
+              </p>
+            </div>
+          </div>
+          <PayrollWizard
+            employees={activeEmployees}
+            initialPeriodStart={periodStart}
+            initialPeriodEnd={periodEnd}
+            onComplete={(data) => handleWizardComplete(data)}
+            onDownloadPdf={(data) => handleWizardComplete(data, true)}
+            onCancel={() => setWizardMode(false)}
+          />
+        </main>
+      ) : (
+      /* ── Modo Formulario clásico ──────────────────────────────────── */
       <main className="flex-1 max-w-[820px] mx-auto w-full px-4 py-10 space-y-8">
         {/* Título */}
         <div className="flex items-center gap-3">
@@ -1449,6 +1599,7 @@ export function PayrollForm() {
           </section>
         )}
       </main>
+      )}
     </div>
   )
 }
