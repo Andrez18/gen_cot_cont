@@ -248,15 +248,16 @@ export function StepTrabajadores({
             {selected.length === employees.length ? 'Deseleccionar todos' : 'Seleccionar todos'}
           </button>
           <div className="rounded-lg border border-border divide-y divide-border max-h-64 overflow-y-auto">
-            {employees.map(emp => {
+            {employees.map((emp, idx) => {
               const isSelected = selected.includes(emp.id)
               return (
                 <button
                   key={emp.id}
                   type="button"
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all duration-150 animate-in fade-in slide-in-from-bottom-2 fill-mode-both ${
                     isSelected ? 'bg-muted' : 'hover:bg-muted/50'
                   }`}
+                  style={{ animationDelay: `${idx * 40}ms` }}
                   onClick={() => toggle(emp.id)}
                 >
                   <div className={`size-4 rounded border flex items-center justify-center shrink-0 transition-colors ${
@@ -485,10 +486,11 @@ export function StepConfigTrabajador({
           label: 'Descontar pensión (4 %)',
           desc: 'Desmarca si ya tiene pensión por otra parte',
         },
-      ].map(item => (
+      ].map((item, idx) => (
         <label
           key={item.key}
-          className="flex items-start gap-3 cursor-pointer select-none p-2 rounded-md hover:bg-muted/50"
+          className="flex items-start gap-3 cursor-pointer select-none p-2 rounded-md hover:bg-muted/50 transition-all duration-150 active:scale-[0.98] animate-in fade-in slide-in-from-left-3 duration-200 fill-mode-both"
+          style={{ animationDelay: `${100 + idx * 60}ms` }}
         >
           <input
             type="checkbox"
@@ -797,7 +799,11 @@ export function StepResumen({
             const dias = num(liq.daysWorked)
             const totalDias = dias + (liq.extraDay ? 1 : 0)
             return (
-              <div key={i} className="px-3 py-2">
+              <div
+                key={i}
+                className="px-3 py-2 animate-in fade-in slide-in-from-left-3 duration-200 fill-mode-both"
+                style={{ animationDelay: `${i * 50}ms` }}
+              >
                 <p className="text-sm font-medium">{getWorkerLabel(w)}</p>
                 <p className="text-xs text-muted-foreground">
                   {totalDias > 0 ? `${totalDias} días` : 'Sin días'}
@@ -813,8 +819,8 @@ export function StepResumen({
         </div>
       </div>
 
-      <div className="flex gap-2">
-        <Button onClick={onComplete} className="flex-1 gap-2">
+      <div className="flex gap-2 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-200 fill-mode-both">
+        <Button onClick={onComplete} className="flex-1 gap-2 transition-all duration-150 active:scale-[0.97]">
           <Check size={14} />
           Generar nómina
         </Button>

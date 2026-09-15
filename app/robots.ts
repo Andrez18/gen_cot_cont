@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cotifactura.app'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://cotifactura.vercel.app'
 
 export default function robots(): MetadataRoute.Robots {
   return {
@@ -17,6 +17,8 @@ export default function robots(): MetadataRoute.Robots {
           '/expenses/',
           '/tools',
           '/admin/',
+          '/loans',
+          '/reset-password',
         ],
       },
     ],

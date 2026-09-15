@@ -457,13 +457,13 @@ export function PayrollWizard({
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="flex-1"
+                className="flex-1 transition-all duration-150 active:scale-[0.97]"
                 onClick={addAnotherWorker}
               >
                 Sí, agregar otro
               </Button>
               <Button
-                className="flex-1"
+                className="flex-1 transition-all duration-150 active:scale-[0.97]"
                 onClick={goToSummary}
               >
                 Ver resumen

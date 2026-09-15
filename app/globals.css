@@ -154,6 +154,15 @@
   }
 }
 
+/* Hide native scrollbar on the whole page */
+html {
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE/Edge */
+}
+html::-webkit-scrollbar {
+  display: none;                /* Chrome/Safari/Opera */
+}
+
 /* PWA Install Banner */
 @media (display-mode: standalone) {
   .install-banner {

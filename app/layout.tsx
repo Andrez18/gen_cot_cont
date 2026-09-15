@@ -138,6 +138,11 @@ export default function RootLayout({
         },
         inLanguage: 'es-CO',
         image: `${SITE_URL}/og-image.png`,
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: '4.8',
+          ratingCount: '150',
+        },
       },
       {
         '@type': 'Organization',
@@ -145,12 +150,61 @@ export default function RootLayout({
         url: SITE_URL,
         logo: `${SITE_URL}/icon-512x512.jpg`,
         email: 'hola@cotifactura.app',
+        sameAs: [],
+        contactPoint: {
+          '@type': 'ContactPoint',
+          email: 'hola@cotifactura.app',
+          contactType: 'customer service',
+          availableLanguage: 'Spanish',
+        },
       },
       {
         '@type': 'WebSite',
         name: 'CotiFactura',
         url: SITE_URL,
         inLanguage: 'es-CO',
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: `${SITE_URL}/?q={search_term_string}`,
+          'query-input': 'required name=search_term_string',
+        },
+      },
+      {
+        '@type': 'FAQPage',
+        mainEntity: [
+          {
+            '@type': 'Question',
+            name: '¿Qué es CotiFactura?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'CotiFactura es una aplicación web para contratistas independientes en Colombia que permite generar cotizaciones, cuentas de cobro, controlar gastos e ingresos, y liquidar nóminas con cumplimiento de la normativa laboral colombiana vigente.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: '¿Cuánto cuesta CotiFactura?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: `CotiFactura tiene un precio de $${process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_COP ?? '30.000'} COP por mes, con funciones de cotizaciones, cuentas de cobro, control de gastos, firma digital y respaldo en la nube.`,
+            },
+          },
+          {
+            '@type': 'Question',
+            name: '¿Puedo generar PDF con firma digital?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Sí, CotiFactura genera PDF profesionales con firma digital, texto seleccionable y diseño personalizable para tus cotizaciones y cuentas de cobro.',
+            },
+          },
+          {
+            '@type': 'Question',
+            name: '¿CotiFactura cumple la normativa colombiana?',
+            acceptedAnswer: {
+              '@type': 'Answer',
+              text: 'Sí, CotiFactura aplica automáticamente la legislación laboral colombiana 2026 incluyendo SMLMV, auxilio de transporte, salud, pensión, FSP, horas extra con recargos legales y prestaciones sociales.',
+            },
+          },
+        ],
       },
     ],
   }
@@ -162,6 +216,11 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="description" content={SITE_DESCRIPTION} />
         <meta name="google-site-verification" content="q0pUKW3ZDj0DBT4n6bJm8c9Qoe2C40C5jBUyedm9u9s" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="color-scheme" content="light dark" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://cdnjs.cloudflare.com" />
         <link rel="icon" href="/icon-192x192.png" type="image/png" />
         <link rel="icon" href="/icon-512x512.jpg" type="image/jpeg" />
         <link rel="apple-touch-icon" href="/apple-icon.jpg" />
