@@ -25,7 +25,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Datos de suscripción incompletos' }, { status: 400 })
     }
 
-    // Usar service_role para insertar (RLS solo permite INSERT自己的, pero esto funciona igual)
     const db = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,

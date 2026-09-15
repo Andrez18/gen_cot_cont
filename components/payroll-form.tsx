@@ -163,6 +163,7 @@ export function PayrollForm() {
   const [lineFields, setLineFields] = useState<Record<string, LineFields>>({})
   const [openExtrasId, setOpenExtrasId] = useState<string | null>(null)
   const [openDetailId, setOpenDetailId] = useState<string | null>(null)
+  const [selectedEmployees, setSelectedEmployees] = useState<Record<string, boolean>>({})
 
   /* ── guardado y PDF ─────────────────────────────────────────────────── */
   const [isSavingRun, setIsSavingRun] = useState(false)
@@ -210,6 +211,17 @@ export function PayrollForm() {
       }
       return changed ? next : prev
     })
+    setSelectedEmployees(prev => {
+      const next = { ...prev }
+      let changed = false
+      for (const e of employees) {
+        if (!(e.id in next)) {
+          next[e.id] = true
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employees])
 
@@ -228,6 +240,29 @@ export function PayrollForm() {
   }, [periodLabel])
 
   const activeEmployees = useMemo(() => employees.filter(e => e.active), [employees])
+
+  const selectedActiveEmployees = useMemo(
+    () => activeEmployees.filter(e => selectedEmployees[e.id] !== false),
+    [activeEmployees, selectedEmployees],
+  )
+
+  const allSelected = useMemo(
+    () => activeEmployees.length > 0 && activeEmployees.every(e => selectedEmployees[e.id] !== false),
+    [activeEmployees, selectedEmployees],
+  )
+
+  const toggleSelectAll = () => {
+    const newValue = !allSelected
+    setSelectedEmployees(prev => {
+      const next = { ...prev }
+      for (const e of activeEmployees) next[e.id] = newValue
+      return next
+    })
+  }
+
+  const toggleEmployee = (id: string) => {
+    setSelectedEmployees(prev => ({ ...prev, [id]: !(prev[id] !== false) }))
+  }
 
   /* Resultados calculados en vivo */
   const resultsById = useMemo(() => {
@@ -267,8 +302,8 @@ export function PayrollForm() {
   }, [activeEmployees, lineFields])
 
   const totals = useMemo(
-    () => computeRunTotals(activeEmployees.map(e => resultsById[e.id]).filter(Boolean)),
-    [activeEmployees, resultsById],
+    () => computeRunTotals(selectedActiveEmployees.map(e => resultsById[e.id]).filter(Boolean)),
+    [selectedActiveEmployees, resultsById],
   )
 
   /* ── manejadores de trabajadores ────────────────────────────────────── */
@@ -376,7 +411,7 @@ export function PayrollForm() {
   /* ── guardar la nómina ──────────────────────────────────────────────── */
 
   const buildLines = (): PayrollRunLine[] =>
-    activeEmployees.map(e => {
+    selectedActiveEmployees.map(e => {
       const f = lineFields[e.id] ?? emptyLineFields()
       const input: PayrollLineInput = {
         employeeId: e.id,
@@ -409,8 +444,8 @@ export function PayrollForm() {
     })
 
   const handleSaveRun = async () => {
-    if (activeEmployees.length === 0) {
-      notifError('Nómina vacía', 'Agrega al menos un trabajador activo')
+    if (selectedActiveEmployees.length === 0) {
+      notifError('Nómina vacía', 'Selecciona al menos un trabajador para la nómina')
       return
     }
     if (totals.totalDevengados <= 0) {
@@ -427,7 +462,7 @@ export function PayrollForm() {
       period_label: periodLabel || null,
       company_name: companyName.trim() || null,
       company_nit: companyNit.trim() || null,
-      employee_count: activeEmployees.length,
+      employee_count: selectedActiveEmployees.length,
       total_devengados: totals.totalDevengados,
       total_deducciones: totals.totalDeducciones,
       total_neto: totals.totalNeto,
@@ -466,8 +501,8 @@ export function PayrollForm() {
   }
 
   const handleDownloadCurrent = () => {
-    if (activeEmployees.length === 0) {
-      notifError('Nómina vacía', 'Agrega al menos un trabajador activo')
+    if (selectedActiveEmployees.length === 0) {
+      notifError('Nómina vacía', 'Selecciona al menos un trabajador para la nómina')
       return
     }
     void downloadPdf({
@@ -676,18 +711,27 @@ export function PayrollForm() {
                 </select>
               </div>
 
-              {(draft.payment_type === 'monthly' || draft.payment_type === 'biweekly') && (
+              {draft.payment_type === 'monthly' && (
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Sueldo mensual (COP) *</Label>
                   <input
                     className={inputStyle}
                     type="number"
                     min="0"
-                    placeholder={
-                      draft.payment_type === 'biweekly'
-                        ? 'Mensual; se paga por quincena'
-                        : String(PAYROLL_CONSTANTS.SMLMV_2026)
-                    }
+                    placeholder={String(PAYROLL_CONSTANTS.SMLMV_2026)}
+                    value={draft.monthly_salary}
+                    onChange={e => setDraft({ ...draft, monthly_salary: e.target.value })}
+                  />
+                </div>
+              )}
+              {draft.payment_type === 'biweekly' && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Sueldo por quincena (COP) *</Label>
+                  <input
+                    className={inputStyle}
+                    type="number"
+                    min="0"
+                    placeholder="Ej. 2300000"
                     value={draft.monthly_salary}
                     onChange={e => setDraft({ ...draft, monthly_salary: e.target.value })}
                   />
@@ -1041,37 +1085,57 @@ export function PayrollForm() {
                 <Clock size={16} className="text-muted-foreground" />
                 <h2 className="text-sm font-medium">Liquidación del periodo</h2>
               </div>
-              <p className="text-xs text-muted-foreground">
-                SMLMV 2026 {formatCurrency(PAYROLL_CONSTANTS.SMLMV_2026)} · jornada 42 h (divisor{' '}
-                {PAYROLL_CONSTANTS.HORAS_MES})
-              </p>
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="size-3.5 accent-[var(--foreground)]"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                  />
+                  Seleccionar todos ({activeEmployees.length})
+                </label>
+                <p className="text-xs text-muted-foreground">
+                  SMLMV 2026 {formatCurrency(PAYROLL_CONSTANTS.SMLMV_2026)} · jornada 42 h (divisor{' '}
+                  {PAYROLL_CONSTANTS.HORAS_MES})
+                </p>
+              </div>
             </div>
 
-            {activeEmployees.map(emp => {
+            {selectedActiveEmployees.map(emp => {
               const r = resultsById[emp.id]
               const f = lineFields[emp.id] ?? emptyLineFields()
               const extrasOpen = openExtrasId === emp.id
               const detailOpen = openDetailId === emp.id
               const noHourBase = emp.payment_type === 'per_task'
+              const isSelected = selectedEmployees[emp.id] !== false
               return (
-                <div key={emp.id} className="rounded-xl border border-border bg-card p-5 space-y-4">
+                <div key={emp.id} className={`rounded-xl border bg-card p-5 space-y-4 transition-opacity ${isSelected ? 'border-border' : 'border-border/50 opacity-50'}`}>
                   {/* encabezado */}
                   <div className="flex items-center justify-between gap-3 flex-wrap">
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold truncate">{emp.full_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {PAYMENT_TYPE_LABELS[emp.payment_type]}
-                        {(() => {
-                          const d = num(f.daysWorked)
-                          const parts: string[] = []
-                          if (d > 0) parts.push(`${d} día${d !== 1 ? 's' : ''}`)
-                          if (r.holidayDays > 0) parts.push(`${r.holidayDays} fest.`)
-                          return parts.length ? ` · ${parts.join(' + ')}` : ''
-                        })()}
-                        {r.auxAplica && ' · con auxilio'}
-                        {!r.deductHealth && ' · sin salud'}
-                        {!r.deductPension && ' · sin pensión'}
-                      </p>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <input
+                        type="checkbox"
+                        className="size-4 accent-[var(--foreground)] shrink-0"
+                        checked={isSelected}
+                        onChange={() => toggleEmployee(emp.id)}
+                      />
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold truncate">{emp.full_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {PAYMENT_TYPE_LABELS[emp.payment_type]}
+                          {(() => {
+                            const d = num(f.daysWorked)
+                            const parts: string[] = []
+                            if (d > 0) parts.push(`${d} día${d !== 1 ? 's' : ''}`)
+                            if (r.holidayDays > 0) parts.push(`${r.holidayDays} fest.`)
+                            return parts.length ? ` · ${parts.join(' + ')}` : ''
+                          })()}
+                          {r.auxAplica && ' · con auxilio'}
+                          {!r.deductHealth && ' · sin salud'}
+                          {!r.deductPension && ' · sin pensión'}
+                        </p>
+                      </div>
                     </div>
                     <div className="text-right shrink-0">
                       <p className="text-xs text-muted-foreground">Neto a pagar</p>

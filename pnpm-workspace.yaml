@@ -1,4 +1,7 @@
+packages: []
+
 allowBuilds:
   core: true
   core-js: true
   sharp: true
+  unrs-resolver: false

@@ -206,10 +206,12 @@ export function computeEmployeePayroll(input: PayrollLineInput): PayrollLineResu
   let baseSalary = 0
   switch (input.paymentType) {
     case 'monthly':
-    case 'biweekly':
-      // Ambos parten del sueldo mensual prorrateado por días trabajados;
-      // una quincena equivale a 15 días de ese sueldo.
       baseSalary = (num(input.monthlySalary) * days) / C.DIAS_MES
+      break
+    case 'biweekly':
+      // El sueldo ingresado es el valor efectivo de la quincena;
+      // se paga completo sin prorratear por días.
+      baseSalary = num(input.monthlySalary)
       break
     case 'weekly':
       // Pago por semana, prorrateado sobre una semana laboral de 6 días:
@@ -233,8 +235,12 @@ export function computeEmployeePayroll(input: PayrollLineInput): PayrollLineResu
   let monthlyEquivalent = 0
   switch (input.paymentType) {
     case 'monthly':
-    case 'biweekly':
       monthlyEquivalent = num(input.monthlySalary)
+      break
+    case 'biweekly':
+      // El valor quincenal se duplica para obtener el equivalente mensual
+      // usado en topes, auxilio transporte y cálculo de horas.
+      monthlyEquivalent = num(input.monthlySalary) * 2
       break
     case 'weekly':
       // ~5 semanas laborales por mes (30 días / 6).
